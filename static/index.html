@@ -22,16 +22,18 @@
     <div class="app-container">
         <!-- HEADER / NAVBAR -->
         <header class="app-header">
-            <div class="logo">
-                <img src="img/logo.png" alt="Bingo Neón Logo" class="logo-img">
-                <span class="logo-text">BINGO<span class="logo-accent">NEÓN</span></span>
+            <div class="header-top-row" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:0.5rem;">
+                <div class="logo">
+                    <img src="img/logo.png" alt="Bingo Neón Logo" class="logo-img">
+                    <span class="logo-text">BINGO<span class="logo-accent">NEÓN</span></span>
+                </div>
+                <div class="user-badge" id="user-badge">
+                    <!-- Se rellena dinámicamente -->
+                </div>
             </div>
             <nav class="nav-menu" id="nav-menu">
                 <!-- Se rellena dinámicamente -->
             </nav>
-            <div class="user-badge" id="user-badge">
-                <!-- Se rellena dinámicamente -->
-            </div>
         </header>
 
         <!-- PANTALLA 1: AUTENTICACIÓN (LOGIN / REGISTRO) -->
@@ -145,19 +147,20 @@
         <main class="app-screen" id="screen-game">
             <div class="game-layout">
                 <!-- Panel del Bolillero y Estado General del Juego -->
+                <!-- Última Bolita Extraída -->
                 <div class="game-sidebar glass-card">
-                    <!-- Balota Actual Gigante -->
+                    <!-- Bolita Actual Gigante -->
                     <div class="active-ball-container">
                         <span class="active-ball-letter" id="game-ball-letter">-</span>
                         <div class="active-ball-sphere" id="game-ball-sphere">
                             <span class="active-ball-number" id="game-ball-number">-</span>
                         </div>
-                        <p class="active-ball-caption">Última Balota Extraída</p>
+                        <p class="active-ball-caption">Última Bolita Extraída</p>
                     </div>
 
-                    <!-- Historial de las Últimas 5 Balotas -->
+                    <!-- Historial de las Últimas 5 Bolitas -->
                     <div class="recent-balls-box">
-                        <h4>Balotas Recientes</h4>
+                        <h4>Bolitas Recientes</h4>
                         <div class="recent-balls-row" id="game-recent-balls">
                             <!-- Esferas pequeñas -->
                         </div>
@@ -204,9 +207,9 @@
                         </div>
                     </div>
 
-                    <!-- Panel de 75 Balotas (Bingo Board) -->
+                    <!-- Panel de 75 Bolitas (Bingo Board) -->
                     <div class="bingo-hall-board glass-card">
-                        <h4>Panel General de Balotas (1 a 75)</h4>
+                        <h4>Panel General de Bolitas (1 a 75)</h4>
                         <div class="bingo-numbers-grid" id="game-hall-numbers-grid">
                             <!-- 75 celdas organizadas por letra -->
                         </div>

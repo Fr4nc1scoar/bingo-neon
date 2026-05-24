@@ -112,10 +112,12 @@ function showScreen(screenId) {
         }
     } else if (screenId === 'screen-admin') {
         fetchAdminSales();
+        fetchAdminAllTickets();
         fetchAdminState();
         if (!state.adminPollerInterval) {
             state.adminPollerInterval = setInterval(() => {
                 fetchAdminSales();
+                fetchAdminAllTickets();
                 fetchAdminState();
             }, 2500);
         }
@@ -984,32 +986,64 @@ async function fetchAdminSales() {
         const data = await res.json();
         
         const tbody = document.getElementById("admin-pending-tickets");
-        
-        if (!data.tickets || data.tickets.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#9ca3af;">No hay reservas pendientes de pago en este momento.</td></tr>`;
-            return;
+        if (tbody) {
+            if (!data.tickets || data.tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#9ca3af;">No hay reservas pendientes de pago en este momento.</td></tr>`;
+            } else {
+                tbody.innerHTML = data.tickets.map(t => {
+                    const timeDiff = new Date(t.reservado_hasta) - new Date();
+                    const min = Math.max(0, Math.floor(timeDiff / 1000 / 60));
+                    
+                    return `
+                        <tr>
+                            <td><strong>${t.username}</strong></td>
+                            <td><span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; font-weight:800; font-size:1.1rem; padding:0.25rem 0.6rem; border-radius:6px; display:inline-block;">Tabla #${t.tabla_id}</span></td>
+                            <td><span style="font-family:monospace; color:#9ca3af; font-size:0.9rem;">${t.codigo_reserva}</span></td>
+                            <td>${min} min</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="adminApproveTicket(${t.id})">
+                                    <i class="fa-solid fa-check"></i> Aprobar Pago
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
-        
-        tbody.innerHTML = data.tickets.map(t => {
-            const timeDiff = new Date(t.reservado_hasta) - new Date();
-            const min = Math.max(0, Math.floor(timeDiff / 1000 / 60));
-            
-            return `
-                <tr>
-                    <td><strong>${t.username}</strong></td>
-                    <td><span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#f87171; font-weight:800; font-size:1.1rem; padding:0.25rem 0.6rem; border-radius:6px; display:inline-block;">Tabla #${t.tabla_id}</span></td>
-                    <td><span style="font-family:monospace; color:#9ca3af; font-size:0.9rem;">${t.codigo_reserva}</span></td>
-                    <td>${min} min</td>
-                    <td>
-                        <button class="btn btn-success btn-sm" onclick="adminApproveTicket(${t.id})">
-                            <i class="fa-solid fa-check"></i> Aprobar Pago
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
     } catch (err) {
         console.error("Error al cargar ventas en admin:", err);
+    }
+}
+
+async function fetchAdminAllTickets() {
+    if (!state.user || state.user.rol !== 'ADMIN') return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/tickets/all`, {
+            headers: { 'Authorization': `Bearer ${state.user.token}` }
+        });
+        const data = await res.json();
+        const tbody = document.getElementById("admin-all-players-list");
+        if (tbody) {
+            if (!data.tickets || data.tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:#9ca3af;">No hay jugadores activos ni reservados en la partida.</td></tr>`;
+            } else {
+                tbody.innerHTML = data.tickets.map(t => {
+                    const statusColor = t.estado === 'PAGADO' ? '#10b981' : '#f59e0b';
+                    const statusBg = t.estado === 'PAGADO' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+                    const statusBorder = t.estado === 'PAGADO' ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)';
+                    return `
+                        <tr>
+                            <td><strong>${t.username}</strong></td>
+                            <td><span style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#818cf8; font-weight:800; padding:0.25rem 0.6rem; border-radius:6px;">Tabla #${t.tabla_id}</span></td>
+                            <td><span style="background:${statusBg}; border:1px solid ${statusBorder}; color:${statusColor}; font-weight:700; font-size:0.85rem; padding:0.25rem 0.6rem; border-radius:6px;">${t.estado}</span></td>
+                            <td><span style="font-family:monospace; color:#9ca3af; font-size:0.9rem;">${t.codigo_reserva}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    } catch (err) {
+        console.error("Error al cargar todos los tickets:", err);
     }
 }
 

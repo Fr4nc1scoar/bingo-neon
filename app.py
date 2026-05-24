@@ -637,6 +637,28 @@ def admin_list_reserved(current_admin: Dict[str, Any] = Depends(get_admin_user),
     tickets = [dict(t) for t in cursor.fetchall()]
     return {"tickets": tickets}
 
+@app.get("/api/admin/tickets/all")
+def admin_list_all_tickets(current_admin: Dict[str, Any] = Depends(get_admin_user), db: sqlite3.Connection = Depends(get_db)):
+    """Lista todos los tickets (PAGADOS y RESERVADOS vigentes) para la partida activa o en curso."""
+    cursor = db.cursor()
+    
+    cursor.execute("SELECT id FROM partidas WHERE estado IN ('ACTIVA', 'JUGANDO') ORDER BY id DESC LIMIT 1;")
+    active = cursor.fetchone()
+    if not active:
+        return {"tickets": []}
+        
+    now_str = datetime.utcnow().isoformat()
+    cursor.execute("""
+        SELECT tv.id, tv.tabla_id, tv.codigo_reserva, tv.estado, u.username
+        FROM tickets_venta tv
+        JOIN usuarios u ON tv.usuario_id = u.id
+        WHERE tv.partida_id = ? AND (tv.estado = 'PAGADO' OR (tv.estado = 'RESERVADO' AND tv.reservado_hasta > ?))
+        ORDER BY tv.estado ASC, tv.tabla_id ASC;
+    """, (active['id'], now_str))
+    
+    tickets = [dict(t) for t in cursor.fetchall()]
+    return {"tickets": tickets}
+
 @app.post("/api/admin/tickets/{ticket_id}/approve")
 def admin_approve_ticket(ticket_id: int, current_admin: Dict[str, Any] = Depends(get_admin_user), db: sqlite3.Connection = Depends(get_db)):
     """Aprueba el pago de una reserva bloqueando permanentemente la tabla para esa partida."""
