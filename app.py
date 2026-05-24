@@ -117,7 +117,8 @@ def init_db():
         count = cursor.fetchone()[0]
         if count < 500:
             print(f"Catálogo maestro vacío o incompleto ({count}/500). Generando 500 tablas estáticas...")
-            generate_master_catalog(cursor, conn, 500)
+            wrapped_conn = PostgresConnWrapper(conn)
+            generate_master_catalog(wrapped_conn.cursor(), conn, 500)
             print("¡Catálogo maestro inicializado con éxito!")
         conn.close()
     else:
