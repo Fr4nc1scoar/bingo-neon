@@ -160,7 +160,7 @@ function updateHeaderUI() {
     // User badge
     userBadge.innerHTML = `
         <i class="fa-solid fa-user-circle"></i>
-        <span><strong>${state.user.username}</strong> (${state.user.rol})</span>
+        <span class="username-display"><strong>${state.user.username}</strong></span>
         <button class="btn-logout" onclick="handleLogout()" title="Cerrar Sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
         </button>
