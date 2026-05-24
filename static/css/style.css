@@ -1544,26 +1544,62 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
     /* Header & Navigation */
     .app-header {
-        flex-direction: column;
-        gap: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: 
+            "logo badge"
+            "nav nav";
+        gap: 1.25rem;
         padding: 1rem 0;
+        align-items: center;
     }
-    .nav-menu {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-        width: 100%;
+    .logo {
+        grid-area: logo;
     }
-    .nav-item {
-        font-size: 0.9rem;
-        padding: 0.5rem 0.8rem;
-        flex: 1 1 auto;
-        text-align: center;
-        min-width: 100px;
+    .logo-text {
+        font-size: 1.25rem;
     }
     .user-badge {
+        grid-area: badge;
+        width: auto;
+        padding: 0.5rem;
+        background: transparent;
+        border: none;
+    }
+    #username-display {
+        display: none; /* Hide username text to save space on mobile, keep icon */
+    }
+    .btn-logout {
+        font-size: 1.25rem;
+    }
+    
+    .nav-menu {
+        grid-area: nav;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
         width: 100%;
-        justify-content: space-between;
+        scrollbar-width: none; /* Firefox */
+        gap: 0.5rem;
+    }
+    .nav-menu::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Edge */
+    }
+    
+    .nav-item {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+        flex: 0 0 auto; /* Prevent shrinking */
+        white-space: nowrap; /* Prevent text wrapping */
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+    }
+    .nav-item.active {
+        background: var(--gradient-primary);
+        box-shadow: none;
+        border-color: #6366f1;
     }
 
     /* Cards and Padding */
@@ -1574,17 +1610,17 @@ input:checked + .slider:before {
     /* Bingo Numbers Touch Target */
     .carton-number-cell {
         font-size: 1rem;
-        height: 44px; /* Accessible minimum touch target size */
+        height: 48px; /* Bigger touch area for thumbs */
     }
     .carton-header-cell {
-        font-size: 0.85rem;
-        padding: 0.25rem 0;
+        font-size: 0.9rem;
+        padding: 0.35rem 0;
     }
     
     /* Action Buttons */
     .btn {
-        min-height: 48px; /* Bigger touch targets */
-        font-size: 0.95rem;
+        min-height: 50px; /* Big accessible touch targets */
+        font-size: 1rem;
     }
     
     /* Board specific */
@@ -1596,28 +1632,66 @@ input:checked + .slider:before {
     .catalog-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0.75rem;
+    }
+    .catalog-title-box h2 {
+        font-size: 1.4rem;
+    }
+    .filter-box {
+        flex-direction: column;
         gap: 1rem;
     }
+    .catalog-grid-numbers {
+        grid-template-columns: repeat(4, 1fr); /* More breathable on tablets */
+        gap: 0.6rem;
+    }
+    .catalog-cell {
+        padding: 1rem 0;
+        font-size: 1rem;
+    }
+    
     .admin-actions-grid {
         grid-template-columns: 1fr !important;
     }
 }
 
 @media (max-width: 480px) {
-    .carton-number-cell {
-        font-size: 0.9rem;
-        height: 38px; /* Slightly smaller for very small phones but still touchable */
-    }
-    .active-ball-sphere {
-        width: 120px;
-        height: 120px;
-        font-size: 3rem;
-    }
-    .lobby-grid, .catalog-main, .board-preview-container {
+    .app-header {
         gap: 1rem;
     }
+    
+    .catalog-grid-numbers {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns for phones so they are big */
+        gap: 0.75rem;
+    }
+    .catalog-cell {
+        padding: 1.2rem 0;
+        font-size: 1.1rem; /* Super easy to tap */
+    }
+    
+    .carton-number-cell {
+        font-size: 0.95rem;
+        height: 42px; 
+    }
+    .carton-header-cell {
+        font-size: 0.8rem;
+    }
+    
+    .active-ball-sphere {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+    
+    .lobby-grid, .catalog-main, .board-preview-container {
+        gap: 1.25rem;
+    }
+    
     .auth-card {
         padding: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
     }
     .app-container {
         padding: 0 1rem;
