@@ -1535,4 +1535,91 @@ input:checked + .slider:before {
     50% {
         box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 35px rgba(99,102,241,0.3);
     }
+    }
+}
+
+/* ==========================================================================
+   MOBILE OPTIMIZATIONS (100% RESPONSIVE)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* Header & Navigation */
+    .app-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1rem 0;
+    }
+    .nav-menu {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    .nav-item {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.8rem;
+        flex: 1 1 auto;
+        text-align: center;
+        min-width: 100px;
+    }
+    .user-badge {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* Cards and Padding */
+    .glass-card {
+        padding: 1.25rem;
+    }
+    
+    /* Bingo Numbers Touch Target */
+    .carton-number-cell {
+        font-size: 1rem;
+        height: 44px; /* Accessible minimum touch target size */
+    }
+    .carton-header-cell {
+        font-size: 0.85rem;
+        padding: 0.25rem 0;
+    }
+    
+    /* Action Buttons */
+    .btn {
+        min-height: 48px; /* Bigger touch targets */
+        font-size: 0.95rem;
+    }
+    
+    /* Board specific */
+    .game-sidebar {
+        margin-bottom: 1rem;
+    }
+    
+    /* Catalog & Admin Controls */
+    .catalog-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .admin-actions-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .carton-number-cell {
+        font-size: 0.9rem;
+        height: 38px; /* Slightly smaller for very small phones but still touchable */
+    }
+    .active-ball-sphere {
+        width: 120px;
+        height: 120px;
+        font-size: 3rem;
+    }
+    .lobby-grid, .catalog-main, .board-preview-container {
+        gap: 1rem;
+    }
+    .auth-card {
+        padding: 0;
+    }
+    .app-container {
+        padding: 0 1rem;
+    }
 }

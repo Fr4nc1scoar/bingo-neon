@@ -3,6 +3,8 @@ import random
 import hashlib
 import json
 import sqlite3
+import psycopg2
+import psycopg2.extras
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
@@ -26,39 +28,121 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
 DB_PATH = os.environ.get('DB_PATH', 'bingo.db')
+
+# --- DB ABSTRACTION WRAPPER PARA POSTGRES ---
+class PostgresCursorWrapper:
+    def __init__(self, pg_cursor):
+        self.pg_cursor = pg_cursor
+        
+    def execute(self, query, params=None):
+        query = query.replace('?', '%s')
+        if params is None:
+            self.pg_cursor.execute(query)
+        else:
+            self.pg_cursor.execute(query, params)
+        return self
+
+    def fetchone(self):
+        return self.pg_cursor.fetchone()
+
+    def fetchall(self):
+        return self.pg_cursor.fetchall()
+        
+    def executescript(self, script):
+        self.pg_cursor.execute(script)
+
+class PostgresConnWrapper:
+    def __init__(self, pg_conn):
+        self.pg_conn = pg_conn
+        
+    def cursor(self):
+        return PostgresCursorWrapper(self.pg_conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
+        
+    def commit(self):
+        self.pg_conn.commit()
+        
+    def close(self):
+        self.pg_conn.close()
 
 # --- LÓGICA DE BASE DE DATOS (Manejador de Conexiones) ---
 def get_db():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    # Habilitar claves foráneas
-    conn.execute("PRAGMA foreign_keys = ON;")
-    try:
-        yield conn
-    finally:
-        conn.close()
+    if DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL)
+        wrapped = PostgresConnWrapper(conn)
+        try:
+            yield wrapped
+        finally:
+            wrapped.close()
+    else:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        # Habilitar claves foráneas
+        conn.execute("PRAGMA foreign_keys = ON;")
+        try:
+            yield conn
+        finally:
+            conn.close()
 
 def init_db():
     """Inicializa la base de datos aplicando el archivo schema.sql si las tablas no existen."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    schema_path = os.path.join(os.path.dirname(__file__), 'database', 'schema.sql')
-    
-    if os.path.exists(schema_path):
-        with open(schema_path, 'r', encoding='utf-8') as f:
-            cursor.executescript(f.read())
-        conn.commit()
+    if DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        schema_path = os.path.join(os.path.dirname(__file__), 'database', 'schema_pg.sql')
+        if os.path.exists(schema_path):
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                cursor.execute(f.read())
+            conn.commit()
+            
+        try:
+            cursor.execute("ALTER TABLE partidas ADD COLUMN modalidad TEXT DEFAULT 'LINEA_Y_CARTON_LLENO';")
+            conn.commit()
+        except psycopg2.errors.DuplicateColumn:
+            conn.rollback()
+        except psycopg2.Error:
+            conn.rollback()
+
+        try:
+            cursor.execute("ALTER TABLE partidas ADD COLUMN patron_custom TEXT;")
+            conn.commit()
+            print("Migración: Columna 'patron_custom' agregada exitosamente a la tabla 'partidas'.")
+        except psycopg2.errors.DuplicateColumn:
+            conn.rollback()
+        except psycopg2.Error:
+            conn.rollback()
+            
+        cursor.execute("SELECT COUNT(*) FROM tablas_maestras;")
+        count = cursor.fetchone()[0]
+        conn.close()
     else:
-        # Fallback inline minimal schema in case schema.sql is missing
-        pass
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        schema_path = os.path.join(os.path.dirname(__file__), 'database', 'schema.sql')
+        
+        if os.path.exists(schema_path):
+            with open(schema_path, 'r', encoding='utf-8') as f:
+                cursor.executescript(f.read())
+            conn.commit()
+        
+        try:
+            cursor.execute("ALTER TABLE partidas ADD COLUMN modalidad TEXT DEFAULT 'LINEA_Y_CARTON_LLENO';")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE partidas ADD COLUMN patron_custom TEXT;")
+            conn.commit()
+            print("Migración: Columna 'patron_custom' agregada exitosamente a la tabla 'partidas'.")
+        except sqlite3.OperationalError:
+            pass
+            
+        cursor.execute("SELECT COUNT(*) FROM tablas_maestras;")
+        count = cursor.fetchone()[0]
+        conn.close()
     
-    # Migración dinámica para agregar columna modalidad si no existe
-    try:
-        cursor.execute("ALTER TABLE partidas ADD COLUMN modalidad TEXT DEFAULT 'LINEA_Y_CARTON_LLENO';")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass
 
     try:
         cursor.execute("ALTER TABLE partidas ADD COLUMN patron_custom TEXT;")
@@ -141,7 +225,9 @@ def register(data: UserRegister, db: sqlite3.Connection = Depends(get_db)):
             (username_clean, p_hash, rol_forced)
         )
         db.commit()
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg2.errors.UniqueViolation):
+        if DATABASE_URL:
+            db.pg_conn.rollback()
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
         
     return {"message": "Usuario registrado con éxito."}
@@ -294,13 +380,14 @@ def reserve_table(data: TableReserve, current_user: Dict[str, Any] = Depends(get
     
     cursor.execute("""
         INSERT INTO tickets_venta (partida_id, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta)
-        VALUES (?, ?, ?, ?, 'RESERVADO', ?);
+        VALUES (?, ?, ?, ?, 'RESERVADO', ?) RETURNING id;
     """, (partida_id, tabla_id, current_user['id'], codigo_reserva, reserva_hasta))
     
+    new_ticket_id = cursor.fetchone()[0]
     db.commit()
     
     return {
-        "ticket_id": cursor.lastrowid,
+        "ticket_id": new_ticket_id,
         "partida_id": partida_id,
         "tabla_id": tabla_id,
         "codigo_reserva": codigo_reserva,
@@ -522,8 +609,8 @@ def admin_create_partida(data: PartidaCreate, current_admin: Dict[str, Any] = De
     cursor.execute("UPDATE partidas SET estado = 'FINALIZADA' WHERE estado IN ('CREADA', 'ACTIVA', 'JUGANDO');")
     
     patron_str = json.dumps(data.patron_custom) if data.patron_custom else None
-    cursor.execute("INSERT INTO partidas (estado, modalidad, patron_custom) VALUES ('ACTIVA', ?, ?);", (data.modalidad, patron_str))
-    new_partida_id = cursor.lastrowid
+    cursor.execute("INSERT INTO partidas (estado, modalidad, patron_custom) VALUES ('ACTIVA', ?, ?) RETURNING id;", (data.modalidad, patron_str))
+    new_partida_id = cursor.fetchone()[0]
     
     # Si keep_tickets está activo y hubo una partida anterior, copiar los tickets pagados
     if data.keep_tickets and last_partida_id:
@@ -718,14 +805,25 @@ def on_startup():
 
 # Crear un admin por defecto al arrancar si no existe
 def create_default_admin():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
     admin_hash = hash_password("admin123")
-    try:
-        cursor.execute("INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?);", ("admin", admin_hash, "ADMIN"))
-        conn.commit()
-        print("Usuario administrador por defecto creado ('admin' / 'admin123').")
-    except sqlite3.IntegrityError:
-        pass # Ya existía
-    conn.close()
+    if DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO usuarios (username, password_hash, rol) VALUES (%s, %s, %s);", ("admin", admin_hash, "ADMIN"))
+            conn.commit()
+            print("Usuario administrador por defecto creado ('admin' / 'admin123').")
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+        conn.close()
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?);", ("admin", admin_hash, "ADMIN"))
+            conn.commit()
+            print("Usuario administrador por defecto creado ('admin' / 'admin123').")
+        except sqlite3.IntegrityError:
+            pass
+        conn.close()
 
