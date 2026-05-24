@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Neón - VIP 75 Bolas</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Archivo CSS Premium -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Fondo Decorativo Glowing Orbs -->
+    <div class="glow-orb" id="orb-1"></div>
+    <div class="glow-orb" id="orb-2"></div>
+
+    <!-- Contenedor Principal de la App -->
+    <div class="app-container">
+        
+        <!-- HEADER / NAVBAR -->
+        <header class="app-header">
+            <div class="logo" style="display:flex; align-items:center; gap:12px;">
+                <img src="img/logo.png" alt="Bingo Neón Logo" style="height: 48px; width: 48px; border-radius: 12px; box-shadow: 0 0 15px rgba(236,72,153,0.5); object-fit: cover;">
+                <span class="logo-text">BINGO<span class="logo-accent" style="color: #f472b6; text-shadow: 0 0 12px #ec4899;">NEÓN</span></span>
+            </div>
+            <nav class="nav-menu" id="nav-menu">
+                <!-- Se rellena dinámicamente -->
+            </nav>
+            <div class="user-badge" id="user-badge">
+                <!-- Se rellena dinámicamente -->
+            </div>
+        </header>
+
+        <!-- PANTALLA 1: AUTENTICACIÓN (LOGIN / REGISTRO) -->
+        <main class="app-screen active" id="screen-auth">
+            <div class="auth-card glass-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">Registrarse</button>
+                </div>
+                
+                <!-- Formulario de Login -->
+                <form id="form-login" class="auth-form active" onsubmit="handleLogin(event)">
+                    <h2 class="auth-title">Acceso Premium</h2>
+                    <p class="auth-subtitle">Ingresa tus credenciales para unirte al juego en vivo.</p>
+                    <div class="form-group">
+                        <label for="login-username"><i class="fa-solid fa-user"></i> Usuario</label>
+                        <input type="text" id="login-username" placeholder="Ingresa tu usuario" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Entrar al Lobby</button>
+                </form>
+
+                <!-- Formulario de Registro -->
+                <form id="form-register" class="auth-form" onsubmit="handleRegister(event)">
+                    <h2 class="auth-title">Crear Cuenta</h2>
+                    <p class="auth-subtitle">Regístrate gratis para obtener tu tabla de Bingo VIP.</p>
+                    <div class="form-group">
+                        <label for="reg-username"><i class="fa-solid fa-user"></i> Nombre de Usuario</label>
+                        <input type="text" id="reg-username" placeholder="Mínimo 3 caracteres" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                        <input type="password" id="reg-password" placeholder="Ingresa tu clave" required autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-accent btn-block">Registrar y Crear</button>
+
+                </form>
+            </div>
+        </main>
+
+        <!-- PANTALLA 2: LOBBY PRINCIPAL -->
+        <main class="app-screen" id="screen-lobby">
+            <div class="lobby-grid">
+                <!-- Estado de la Partida Activa -->
+                <div class="lobby-status-card glass-card">
+                    <div class="card-badge" id="lobby-status-badge">Esperando Partida</div>
+                    <h2 class="card-title"><i class="fa-solid fa-ticket"></i> Partida Activa</h2>
+                    <div class="game-info-box" id="lobby-game-info">
+                        <p class="info-empty">No hay ninguna partida activa en este momento. El administrador iniciará el juego pronto.</p>
+                    </div>
+                    
+                    <!-- Botón para ir a comprar tablas -->
+                    <div class="action-box text-center" id="lobby-action-box" style="display: none;">
+                        <button class="btn btn-primary btn-lg" onclick="showScreen('screen-catalog')">
+                            <i class="fa-solid fa-cart-shopping"></i> Comprar Tabla de Bingo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mis Compras de la Partida -->
+                <div class="lobby-my-tickets glass-card">
+                    <h2 class="card-title"><i class="fa-solid fa-wallet"></i> Mis Tablas Compradas</h2>
+                    <p class="card-subtitle">Estas son las tablas adquiridas para la partida en curso.</p>
+                    <div class="tickets-list" id="lobby-tickets-list">
+                        <!-- Relleno dinámico -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- PANTALLA 3: CATÁLOGO DE TABLAS MAESTRAS -->
+        <main class="app-screen" id="screen-catalog">
+            <div class="catalog-header">
+                <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-lobby')">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Lobby
+                </button>
+                <div class="catalog-title-box">
+                    <h2>Catálogo Maestro de Tablas</h2>
+                    <p>Elige tu tabla de la suerte (ID 1 al 500). Cada tabla contiene 4 cartones únicos de Bingo.</p>
+                </div>
+            </div>
+
+            <div class="catalog-main">
+                <!-- Rejilla de Selección Rápida -->
+                <div class="catalog-selection glass-card">
+                    <h3>Selecciona una Tabla Estática</h3>
+                    <div class="filter-box">
+                        <input type="number" id="catalog-search-id" placeholder="Buscar ID de tabla (1-500)..." min="1" max="500" oninput="filterCatalogTable()">
+                        <button class="btn btn-primary btn-sm" onclick="selectSearchTable()">Buscar</button>
+                    </div>
+                    
+                    <div class="catalog-grid-numbers" id="catalog-numbers-grid">
+                        <!-- Celdas numéricas de 1 a 500 -->
+                    </div>
+                </div>
+
+                <!-- Previsualizador de la Tabla Seleccionada -->
+                <div class="catalog-preview glass-card" id="catalog-preview-box">
+                    <div class="preview-empty">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <p>Selecciona un número de tabla del panel izquierdo para previsualizar sus 4 cartones antes de reservar.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- PANTALLA 4: PANTALLA DE JUEGO EN VIVO (PLAY ROOM) -->
+        <main class="app-screen" id="screen-game">
+            <div class="game-layout">
+                <!-- Panel del Bolillero y Estado General del Juego -->
+                <div class="game-sidebar glass-card">
+                    <!-- Balota Actual Gigante -->
+                    <div class="active-ball-container">
+                        <span class="active-ball-letter" id="game-ball-letter">-</span>
+                        <div class="active-ball-sphere" id="game-ball-sphere">
+                            <span class="active-ball-number" id="game-ball-number">-</span>
+                        </div>
+                        <p class="active-ball-caption">Última Balota Extraída</p>
+                    </div>
+
+                    <!-- Historial de las Últimas 5 Balotas -->
+                    <div class="recent-balls-box">
+                        <h4>Balotas Recientes</h4>
+                        <div class="recent-balls-row" id="game-recent-balls">
+                            <!-- Esferas pequeñas -->
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Marcado -->
+                    <div class="game-controls-box">
+                        <div class="toggle-control">
+                            <span class="toggle-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Marcado</span>
+                            <label class="switch">
+                                <input type="checkbox" id="game-toggle-autodaub" checked onchange="toggleAutoDaub()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <button class="btn btn-secondary btn-block mt-3" onclick="checkCurrentBingoManual()">
+                            <i class="fa-solid fa-trophy"></i> Gritar ¡BINGO!
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tablero de Juego Principal (Cartones del Jugador y Panel General de Balotas) -->
+                <div class="game-main-panel">
+                    <!-- Sección de Mis Cartones Activos -->
+                    <div class="player-board-wrapper">
+                        <div class="board-header">
+                            <div>
+                                <h3>Mis Cartones de Juego (Tabla #<span id="game-active-table-id">-</span>)</h3>
+                                <div class="modality-badge-container mt-1">
+                                    <span class="modality-label"><i class="fa-solid fa-circle-question"></i> Modalidad:</span>
+                                    <span id="game-active-modalidad" class="modality-badge">Cargando...</span>
+                                </div>
+                            </div>
+                            <span class="ticket-status-tag" id="game-ticket-status">Activo</span>
+                        </div>
+                        
+                        <!-- Pestañas de Tablas Adquiridas (Evita marear en móvil) -->
+                        <div class="table-selector-tabs" id="game-tables-tabs">
+                            <!-- Se renderizan dinámicamente si hay más de una tabla -->
+                        </div>
+                        
+                        <!-- Grid de Cartones de la Tabla Seleccionada -->
+                        <div class="grid-4-cartones" id="game-cartones-grid">
+                            <!-- Se renderizan los 4 cartones dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Panel de 75 Balotas (Bingo Board) -->
+                    <div class="bingo-hall-board glass-card">
+                        <h4>Panel General de Balotas (1 a 75)</h4>
+                        <div class="bingo-numbers-grid" id="game-hall-numbers-grid">
+                            <!-- 75 celdas organizadas por letra -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- PANTALLA 5: PANEL DE ADMINISTRADOR -->
+        <main class="app-screen" id="screen-admin">
+            <div class="admin-grid">
+                <!-- Panel de Control de Partida -->
+                <div class="admin-control glass-card">
+                    <h2 class="card-title"><i class="fa-solid fa-screwdriver-wrench"></i> Consola del Bolillero</h2>
+                    <div class="admin-status-box">
+                        <span>Estado del Servidor:</span>
+                        <span class="admin-state-tag" id="admin-game-status">INACTIVO</span>
+                    </div>
+
+                    <!-- Configuración de Modalidad al Crear -->
+                    <div class="form-group mt-3" style="margin: 1rem 0;">
+                        <label for="admin-create-modalidad" style="display:block; font-size:0.875rem; margin-bottom:0.5rem; color:#d1d5db;"><i class="fa-solid fa-trophy" style="color:#a855f7;"></i> Modalidad de Juego</label>
+                        <select id="admin-create-modalidad" onchange="toggleAdminCustomPatternGrid()" style="width:100%; background:rgba(0,0,0,0.25); border:1px solid var(--glass-border); border-radius:8px; padding:0.5rem 0.75rem; color:#fff;">
+                            <option value="LINEA_Y_CARTON_LLENO">Línea y Cartón Lleno (Predeterminado)</option>
+                            <option value="CARTON_LLENO">Solo Cartón Lleno</option>
+                            <option value="LINEA">Solo Línea</option>
+                            <option value="CUSTOM">Patrón Personalizado (Solo Patrón Libre)</option>
+                            <option value="CUSTOM_Y_CARTON_LLENO">Patrón Libre + Cartón Lleno</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <input type="checkbox" id="admin-keep-tickets" style="accent-color: #f472b6; transform: scale(1.2);">
+                        <label for="admin-keep-tickets" style="font-size: 0.85rem; color: #d1d5db; cursor: pointer;">Conservar jugadores (clonar ventas de partida anterior)</label>
+                    </div>
+
+                    <!-- Panel de Dibujo de Patrón Personalizado -->
+                    <div id="admin-custom-pattern-wrapper" style="display:none; margin: 1rem 0; padding: 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <label style="display:block; font-size:0.85rem; margin-bottom:0.5rem; color:#c084fc; font-weight:700;"><i class="fa-solid fa-wand-magic-sparkles"></i> Dibuja tu Patrón Ganador</label>
+                        <p style="font-size:0.75rem; color:#9ca3af; margin-bottom:0.75rem;">Haz clic en las celdas para definir el patrón ganador (el centro FREE ya cuenta por defecto).</p>
+                        
+                        <div class="custom-pattern-grid-container" style="display:flex; justify-content:center; margin-bottom:0.75rem;">
+                            <div class="custom-pattern-grid" id="admin-custom-pattern-grid" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; max-width:180px; width:100%;">
+                                <!-- Pintado dinámicamente con JS (25 celdas) -->
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" type="button" onclick="clearCustomPatternGrid()" style="width:100%; font-size:0.75rem; padding: 0.25rem 0.5rem;">
+                            <i class="fa-solid fa-eraser"></i> Limpiar Dibujo
+                        </button>
+                    </div>
+
+                    <div class="admin-actions-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:1rem;">
+                        <button class="btn btn-accent btn-sm" onclick="adminCreateGame()"><i class="fa-solid fa-plus"></i> Crear Nueva Partida</button>
+                        <button class="btn btn-primary btn-sm" onclick="adminStartGame()"><i class="fa-solid fa-play"></i> Iniciar Juego (Cerrar Ventas)</button>
+                        <button class="btn btn-success btn-sm" onclick="adminDrawBall()"><i class="fa-solid fa-random"></i> Extraer Siguiente Bola</button>
+                        <button class="btn btn-danger btn-sm" onclick="adminEndGame()"><i class="fa-solid fa-stop"></i> Finalizar Partida</button>
+                    </div>
+
+                    <div class="admin-system-actions mt-4 pt-3 border-top" style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                        <h4>Herramientas de Mantenimiento</h4>
+                        <button class="btn btn-secondary btn-sm mt-2" onclick="adminResetAllData()"><i class="fa-solid fa-trash-can"></i> Limpiar Historial (Reset Demo)</button>
+                    </div>
+                </div>
+
+                <!-- Monitor de Partida en Vivo (Auditoría Admin) -->
+                <div class="admin-monitor glass-card" style="display:flex; flex-direction:column; gap:1rem;">
+                    <h2 class="card-title"><i class="fa-solid fa-eye"></i> Monitor de Auditoría</h2>
+                    <p class="card-subtitle" style="margin-bottom:0.25rem;">Seguimiento en vivo del bolillero y ganadores de la partida activa.</p>
+                    
+                    <div class="admin-live-row" style="display:flex; gap:1.5rem; align-items:center;">
+                        <div class="admin-ball-sphere" id="admin-ball-sphere" style="width:70px; height:70px; border-radius:50%; background:var(--gradient-primary); display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-weight:800; font-size:1.8rem; box-shadow:0 0 15px rgba(99,102,241,0.4); text-shadow:0 2px 4px rgba(0,0,0,0.3);">
+                            -
+                        </div>
+                        <div>
+                            <div style="font-weight:700; font-size:0.9rem; color:#818cf8;">ÚLTIMA EXTRAÍDA</div>
+                            <div style="font-size:0.8rem; color:#9ca3af;" id="admin-drawn-count">Bolas extraídas: 0/75</div>
+                        </div>
+                    </div>
+
+                    <!-- Historial de Ganadores -->
+                    <div style="background:rgba(0,0,0,0.25); border:1px solid var(--glass-border); border-radius:8px; padding:0.75rem; max-height:130px; overflow-y:auto;">
+                        <div style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:#a855f7; margin-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.25rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span><i class="fa-solid fa-crown"></i> Registro de Ganadores</span>
+                        </div>
+                        <ul id="admin-winners-log" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:0.5rem; font-size:0.8rem;">
+                            <li style="color:#6b7280; text-align:center; padding:0.5rem 0;">Esperando inicio...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Historial de Bolas Extraídas -->
+                    <div style="background:rgba(0,0,0,0.25); border:1px solid var(--glass-border); border-radius:8px; padding:0.75rem; flex:1; max-height:160px; overflow-y:auto; display:flex; flex-direction:column;">
+                        <div style="font-weight:700; font-size:0.8rem; text-transform:uppercase; color:#22c55e; margin-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.25rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span><i class="fa-solid fa-list-ol"></i> Bolas Extraídas (Orden Inverso)</span>
+                            <span id="admin-history-count" style="font-size:0.75rem; color:#9ca3af;">(0)</span>
+                        </div>
+                        <div id="admin-balls-history-grid" style="display:flex; flex-wrap:wrap; gap:6px; content-visibility:auto;">
+                            <div style="color:#6b7280; text-align:center; padding:1rem 0; width:100%; font-size:0.8rem;">Ninguna bola extraída aún.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel de Ventas / Tickets a Aprobar -->
+                <div class="admin-sales glass-card">
+                    <h2 class="card-title"><i class="fa-solid fa-cash-register"></i> Aprobación de Pagos (Ventas)</h2>
+                    <p class="card-subtitle">Verifica y aprueba el pago de las tablas reservadas por jugadores en tiempo real.</p>
+                    
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Tabla ID</th>
+                                    <th>Código Reserva</th>
+                                    <th>Vence en</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-pending-tickets">
+                                <!-- Relleno dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- NOTIFICACIONES FLOTANTES (POPUP GANADORES / AVISOS) -->
+        <div class="bingo-overlay" id="bingo-win-overlay">
+            <div class="bingo-win-modal glass-card">
+                <div class="confetti-holder">
+                    <i class="fa-solid fa-snowflake fa-spin confetti-icon" style="--d:1s; --l:15%"></i>
+                    <i class="fa-solid fa-star fa-bounce confetti-icon" style="--d:0.5s; --l:45%"></i>
+                    <i class="fa-solid fa-circle confetti-icon" style="--d:1.2s; --l:80%"></i>
+                </div>
+                <div class="win-trophy">
+                    <i class="fa-solid fa-trophy animate-pulse"></i>
+                </div>
+                <h1 class="win-title">¡BINGO DE NEÓN!</h1>
+                <div class="win-details" id="win-overlay-details">
+                    <!-- Relleno dinámico -->
+                </div>
+                <button class="btn btn-accent btn-lg mt-4" onclick="closeWinOverlay()">Continuar Jugando</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Overlay de Ventas Cerradas - Partida a Comenzar -->
+    <div class="sales-closed-overlay" id="screen-lock-overlay" style="display:none; position:fixed; inset:0; background:rgba(10,10,18,0.95); z-index:99999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
+        <div class="lock-card" style="text-align:center; padding:2rem; max-width:480px; width:90%; border-radius:24px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div class="lock-icon-sphere" style="width:100px; height:100px; border-radius:50%; background:var(--gradient-primary); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; font-size:3rem; color:#fff; box-shadow:0 0 30px rgba(99,102,241,0.6);">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h1 style="font-family:var(--font-heading); font-size:2.2rem; font-weight:800; background:var(--gradient-primary); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.75rem;">¡VENTAS CERRADAS!</h1>
+            <p style="color:#d1d5db; font-size:1.1rem; line-height:1.5; margin-bottom:1.5rem;">La boletería oficial se ha cerrado con éxito. Preparando bolillero digital...</p>
+            <div class="countdown-bar" style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                <div id="lock-overlay-progress" style="width:0%; height:100%; background:var(--gradient-accent); border-radius:3px; transition:width 3000ms linear;"></div>
+            </div>
+            <div style="margin-top:1rem; font-size:0.875rem; color:var(--text-accent); font-weight:700; letter-spacing:1px; text-transform:uppercase;">El juego va a comenzar</div>
+        </div>
+    </div>
+
+    <!-- Contenedor Global para Notificaciones Premium Glassmorphic (Toasts) -->
+    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:100000; display:flex; flex-direction:column; gap:10px; pointer-events:none; max-width:360px; width:90%;"></div>
+
+    <!-- Archivo JS Premium -->
+    <script src="js/app.js"></script>
+</body>
+</html>
