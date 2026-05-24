@@ -1492,33 +1492,47 @@ input:checked + .slider:before {
     object-fit: cover;
 }
 
-/* The header is now split into TWO rows */
+/* Flex-wrap layout: On mobile, nav-menu breaks to a new line */
 .app-header {
     display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: 0;
-    border-bottom: 1px solid var(--glass-border);
-}
-
-/* Row 1: Logo left, user badge right */
-.header-top-row {
-    display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    padding: 0.85rem 0;
-    width: 100%;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--glass-border);
+    gap: 0;
 }
 
-/* Row 2: Full-width nav bar that scrolls horizontally */
+.logo {
+    order: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-badge {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
 .nav-menu {
+    order: 3;
+    width: 100%;
     display: flex;
     gap: 0.4rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 0.6rem 0 0.75rem 0;
-    width: 100%;
+    padding: 0.75rem 0 0.5rem 0;
+    margin-top: 0.5rem;
 }
 .nav-menu::-webkit-scrollbar { display: none; }
 
@@ -1550,19 +1564,6 @@ input:checked + .slider:before {
     box-shadow: 0 0 12px rgba(99,102,241,0.4);
 }
 
-/* User badge restored - compact pill */
-.user-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 0.85rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--glass-border);
-    border-radius: 30px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-}
-
 .user-badge i { color: #a855f7; }
 
 .username-display {
@@ -1589,26 +1590,22 @@ input:checked + .slider:before {
    ========================================================================== */
 @media (min-width: 901px) {
     .app-header {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1.25rem 0;
+        flex-wrap: nowrap;
         gap: 1.5rem;
+        padding: 1.25rem 0;
     }
-    .header-top-row {
-        display: contents; /* logo and user-badge become direct flex children */
-    }
-    .logo { order: 1; }
     .nav-menu {
         order: 2;
+        width: auto;
         flex: 1;
         justify-content: center;
+        margin-top: 0;
         padding: 0;
-        gap: 1rem;
         overflow-x: visible;
-        scrollbar-width: auto;
     }
-    .user-badge { order: 3; }
+    .user-badge {
+        order: 3;
+    }
     .username-display { display: inline; }
 }
 
@@ -1653,7 +1650,10 @@ input:checked + .slider:before {
         flex-direction: column;
         gap: 1.25rem;
     }
-    .catalog-selection { order: 1; max-height: none; }
+    .catalog-selection { 
+        order: 1; 
+        max-height: 400px; /* Keep it scrollable on mobile! */
+    }
     .catalog-preview {
         order: 2;
         min-height: auto !important; /* Remove the 500px min-height on mobile */
@@ -1689,8 +1689,7 @@ input:checked + .slider:before {
     .catalog-grid-numbers {
         grid-template-columns: repeat(4, 1fr);
         gap: 0.5rem;
-        overflow-y: visible;
-        max-height: none;
+        overflow-y: auto; /* MUST BE AUTO SO IT SCROLLS */
     }
     .catalog-cell {
         padding: 0.85rem 0;
