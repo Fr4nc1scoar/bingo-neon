@@ -7,9 +7,3 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.11
-      - key: DB_PATH
-        value: /opt/render/project/src/data/bingo.db
-    disk:
-      name: bingo-db
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
