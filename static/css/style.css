@@ -81,13 +81,7 @@ body {
 }
 
 /* --- HEADER / NAVBAR --- */
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--glass-border);
-}
+/* (Styles now defined in the Mobile-First section below) */
 
 .logo {
     display: flex;
@@ -115,60 +109,7 @@ body {
     font-weight: 500;
 }
 
-.nav-menu {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.nav-item {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    font-family: var(--font-heading);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.nav-item:hover, .nav-item.active {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.nav-item.active {
-    box-shadow: inset 0 -2px 0 #6366f1;
-}
-
-.user-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--glass-border);
-    border-radius: 30px;
-    font-size: 0.875rem;
-}
-
-.user-badge i {
-    color: #a855f7;
-}
-
-.btn-logout {
-    background: none;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: transform 0.2s ease;
-}
-
-.btn-logout:hover {
-    transform: scale(1.1);
-}
+/* (nav-item, nav-menu, user-badge, btn-logout defined in Mobile-First section) */
 
 /* --- CLASE GLASS CARD (Glassmorphism Core) --- */
 .glass-card {
@@ -1539,186 +1480,270 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   MOBILE OPTIMIZATIONS (100% RESPONSIVE)
+   ESTILOS BASE DEL HEADER (Mobile-First Redesign)
+   ========================================================================== */
+
+/* Logo image base */
+.logo-img {
+    height: 42px;
+    width: 42px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(236,72,153,0.5);
+    object-fit: cover;
+}
+
+/* The header is now split into TWO rows */
+.app-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+/* Row 1: Logo left, user badge right */
+.header-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 0;
+    width: 100%;
+}
+
+/* Row 2: Full-width nav bar that scrolls horizontally */
+.nav-menu {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0.6rem 0 0.75rem 0;
+    width: 100%;
+}
+.nav-menu::-webkit-scrollbar { display: none; }
+
+.nav-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    color: #9ca3af;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.55rem 1.1rem;
+    border-radius: 20px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.nav-item:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255,255,255,0.15);
+}
+
+.nav-item.active {
+    color: #fff;
+    background: var(--gradient-primary);
+    border-color: transparent;
+    box-shadow: 0 0 12px rgba(99,102,241,0.4);
+}
+
+/* User badge restored - compact pill */
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.user-badge i { color: #a855f7; }
+
+.username-display {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: transform 0.2s ease;
+    padding: 0;
+    line-height: 1;
+}
+.btn-logout:hover { transform: scale(1.15); }
+
+/* ==========================================================================
+   RESPONSIVE - TABLET (≤ 900px)
+   ========================================================================== */
+@media (max-width: 900px) {
+    .lobby-grid { grid-template-columns: 1fr; }
+    .catalog-main { grid-template-columns: 1fr; }
+    .admin-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   RESPONSIVE - MOBILE (≤ 768px)
    ========================================================================== */
 @media (max-width: 768px) {
-    /* Header & Navigation */
-    .app-header {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-areas: 
-            "logo badge"
-            "nav nav";
-        gap: 1.25rem;
-        padding: 1rem 0;
-        align-items: center;
-    }
-    .logo {
-        grid-area: logo;
-    }
-    .logo-text {
-        font-size: 1.25rem;
-    }
-    .user-badge {
-        grid-area: badge;
-        width: auto;
-        padding: 0.5rem;
-        background: transparent;
-        border: none;
-    }
-    .username-display {
-        display: none; /* Hide username text to save space on mobile, keep icon */
-    }
-    .btn-logout {
-        font-size: 1.25rem;
-    }
-    
-    .nav-menu {
-        grid-area: nav;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 0.5rem;
-        width: 100%;
-        scrollbar-width: none; /* Firefox */
-        gap: 0.5rem;
-    }
-    .nav-menu::-webkit-scrollbar {
-        display: none; /* Chrome/Safari/Edge */
-    }
-    
-    .nav-item {
-        font-size: 0.9rem;
-        padding: 0.6rem 1rem;
-        flex: 0 0 auto; /* Prevent shrinking */
-        white-space: nowrap; /* Prevent text wrapping */
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--glass-border);
-    }
-    .nav-item.active {
-        background: var(--gradient-primary);
-        box-shadow: none;
-        border-color: #6366f1;
-    }
+    /* Container edges */
+    .app-container { padding: 0 1rem; }
 
-    /* Cards and Padding */
-    .glass-card {
-        padding: 1.25rem;
-    }
-    
-    /* Bingo Numbers Touch Target */
-    .carton-number-cell {
-        font-size: 1rem;
-        height: 48px; /* Bigger touch area for thumbs */
-    }
-    .carton-header-cell {
-        font-size: 0.9rem;
-        padding: 0.35rem 0;
-    }
-    
-    /* Action Buttons */
-    .btn {
-        min-height: 50px; /* Big accessible touch targets */
-        font-size: 1rem;
-    }
-    
-    /* Board specific */
-    .game-sidebar {
-        margin-bottom: 1rem;
-    }
-    
-    /* Catalog & Admin Controls */
+    /* Hide text username in badge - show only icon + logout */
+    .username-display { display: none; }
+
+    /* === LOBBY === */
+    .lobby-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .glass-card { padding: 1.25rem; }
+    .card-title { font-size: 1.25rem; }
+    .game-info-box { padding: 1rem; margin-bottom: 1.25rem; }
+    .action-box .btn { width: 100%; justify-content: center; }
+
+    /* === CATALOG PAGE === */
     .catalog-header {
-        display: flex;
         flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
     }
-    .catalog-header button {
-        align-self: flex-start;
-        width: auto;
-        white-space: nowrap;
-    }
-    .catalog-title-box h2 {
-        font-size: 1.4rem;
-        margin-top: 0.25rem;
-    }
+    .catalog-title-box h2 { font-size: 1.35rem; }
+    .catalog-main { grid-template-columns: 1fr; gap: 1.25rem; }
+
+    /* Search row - always inline */
     .filter-box {
         display: flex;
         flex-direction: row;
-        width: 100%;
         gap: 0.5rem;
-        align-items: center;
+        align-items: stretch;
+        width: 100%;
     }
     .filter-box input {
         flex: 1;
         min-width: 0;
-        margin: 0;
-        height: 46px;
+        height: 44px;
+        font-size: 1rem;
     }
     .filter-box button {
         flex: 0 0 auto;
-        height: 46px;
-        min-height: 46px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 44px;
+        min-height: 44px;
+        padding: 0 1rem;
     }
+
+    /* Catalog number grid: 4 cols on tablet/phablet */
     .catalog-grid-numbers {
-        grid-template-columns: repeat(4, 1fr); /* More breathable on tablets */
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+    .catalog-cell {
+        padding: 0.9rem 0;
+        font-size: 0.95rem;
+    }
+    .catalog-selection { max-height: none; }
+
+    /* === GAME ROOM === */
+    .game-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+    .game-sidebar {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .active-ball-container { margin-bottom: 0; flex: 0 0 auto; }
+    .active-ball-sphere {
+        width: 70px; height: 70px;
+    }
+    .active-ball-number { font-size: 2rem; }
+    .active-ball-letter { font-size: 1.1rem; }
+    .active-ball-caption { font-size: 0.75rem; }
+    .recent-balls-box {
+        flex: 1;
+        margin-bottom: 0;
+        min-width: 150px;
+    }
+    .game-controls-box {
+        flex: 0 0 100%;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--glass-border);
+        margin-top: 0.5rem;
+    }
+    .grid-4-cartones {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem;
+    }
+    .carton-number-cell { font-size: 1.05rem; height: 46px; }
+    .carton-header-cell { font-size: 0.88rem; }
+
+    /* Bingo hall numbers: 8 cols */
+    .bingo-numbers-grid { grid-template-columns: repeat(8, 1fr); gap: 5px; }
+    .hall-number-cell { font-size: 0.8rem; }
+
+    /* Board header */
+    .board-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .board-header h3 { font-size: 1.2rem; }
+
+    /* Admin */
+    .admin-grid { grid-template-columns: 1fr !important; gap: 1.25rem; }
+
+    /* Buttons */
+    .btn { min-height: 48px; font-size: 0.95rem; }
+    .btn-block { width: 100%; justify-content: center; }
+}
+
+/* ==========================================================================
+   RESPONSIVE - SMALL PHONES (≤ 480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+    .app-container { padding: 0 0.75rem; }
+
+    .logo-img { height: 36px; width: 36px; }
+    .logo-text { font-size: 1.15rem; }
+
+    /* Catalog: 3 big columns on phone */
+    .catalog-grid-numbers {
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.6rem;
     }
     .catalog-cell {
         padding: 1rem 0;
         font-size: 1rem;
     }
-    
-    .admin-actions-grid {
-        grid-template-columns: 1fr !important;
-    }
+
+    /* Bingo ball */
+    .active-ball-sphere { width: 60px; height: 60px; }
+    .active-ball-number { font-size: 1.7rem; }
+
+    /* Cards */
+    .glass-card { padding: 1rem; border-radius: 12px; }
+    .carton-number-cell { font-size: 1rem; height: 40px; }
+    .carton-header-cell { font-size: 0.8rem; padding: 0.3rem 0; }
+
+    /* Auth */
+    .auth-card { border: none; background: transparent; box-shadow: none; padding: 0; }
+    #screen-auth { align-items: flex-start; padding-top: 1.5rem; }
+
+    /* Win modal */
+    .bingo-win-modal { width: 95%; padding: 1.5rem; }
+    .win-title { font-size: 1.8rem; }
 }
 
-@media (max-width: 480px) {
-    .app-header {
-        gap: 1rem;
-    }
-    
-    .catalog-grid-numbers {
-        grid-template-columns: repeat(3, 1fr); /* 3 columns for phones so they are big */
-        gap: 0.75rem;
-    }
-    .catalog-cell {
-        padding: 1.2rem 0;
-        font-size: 1.1rem; /* Super easy to tap */
-    }
-    
-    .carton-number-cell {
-        font-size: 0.95rem;
-        height: 42px; 
-    }
-    .carton-header-cell {
-        font-size: 0.8rem;
-    }
-    
-    .active-ball-sphere {
-        width: 100px;
-        height: 100px;
-        font-size: 2.5rem;
-    }
-    
-    .lobby-grid, .catalog-main, .board-preview-container {
-        gap: 1.25rem;
-    }
-    
-    .auth-card {
-        padding: 0;
-        border: none;
-        background: transparent;
-        box-shadow: none;
-    }
-    .app-container {
-        padding: 0 1rem;
-    }
-}
