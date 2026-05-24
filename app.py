@@ -115,6 +115,10 @@ def init_db():
             
         cursor.execute("SELECT COUNT(*) FROM tablas_maestras;")
         count = cursor.fetchone()[0]
+        if count < 500:
+            print(f"Catálogo maestro vacío o incompleto ({count}/500). Generando 500 tablas estáticas...")
+            generate_master_catalog(cursor, conn, 500)
+            print("¡Catálogo maestro inicializado con éxito!")
         conn.close()
     else:
         conn = sqlite3.connect(DB_PATH)
@@ -141,26 +145,12 @@ def init_db():
             
         cursor.execute("SELECT COUNT(*) FROM tablas_maestras;")
         count = cursor.fetchone()[0]
+        if count < 500:
+            print(f"Catálogo maestro vacío o incompleto ({count}/500). Generando 500 tablas estáticas...")
+            generate_master_catalog(cursor, conn, 500)
+            print("¡Catálogo maestro inicializado con éxito!")
         conn.close()
     
-
-    try:
-        cursor.execute("ALTER TABLE partidas ADD COLUMN patron_custom TEXT;")
-        conn.commit()
-        print("Migración: Columna 'patron_custom' agregada exitosamente a la tabla 'partidas'.")
-    except sqlite3.OperationalError:
-        pass # La columna ya existe
-    
-    # Comprobar si el catálogo maestro tiene las 500 tablas pre-generadas
-    cursor.execute("SELECT COUNT(*) FROM tablas_maestras;")
-    count = cursor.fetchone()[0]
-    if count < 500:
-        print(f"Catálogo maestro vacío o incompleto ({count}/500). Generando 500 tablas estáticas...")
-        generate_master_catalog(DB_PATH, 500)
-        print("¡Catálogo maestro inicializado con éxito!")
-        
-    conn.close()
-
 # --- SEGURIDAD Y TOKEN MOCK (Ligero y sin dependencias externas complejas) ---
 # En producción usaríamos JWT, para este prototipo premium local usaremos tokens opacos simples.
 # Guardamos los tokens en memoria (se limpian si el servidor se reinicia, lo cual es excelente para pruebas)

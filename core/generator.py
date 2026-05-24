@@ -65,18 +65,12 @@ def compute_board_signature(card_hashes: List[str]) -> str:
     serialized = ",".join(sorted_hashes)
     return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
-def generate_master_catalog(db_path: str, count: int = 500) -> Tuple[int, int]:
+def generate_master_catalog(cursor, conn, count: int = 500) -> Tuple[int, int]:
     """
     Genera y guarda en la base de datos el catálogo maestro de 500 tablas.
     Garantiza unicidad de cartones a nivel global y de tablas a nivel global.
     Retorna (tablas_creadas, cartones_creados).
     """
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # Habilitar claves foráneas
-    cursor.execute("PRAGMA foreign_keys = ON;")
-    
     # Limpiar catálogo existente para garantizar consistencia
     cursor.execute("DELETE FROM cartones_maestros;")
     cursor.execute("DELETE FROM tablas_maestras;")
@@ -130,7 +124,6 @@ def generate_master_catalog(db_path: str, count: int = 500) -> Tuple[int, int]:
         boards_created += 1
         
     conn.commit()
-    conn.close()
     return boards_created, cartons_created
 
 if __name__ == '__main__':
