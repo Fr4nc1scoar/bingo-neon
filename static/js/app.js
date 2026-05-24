@@ -459,6 +459,12 @@ async function selectCatalogTable(id) {
                 ${cartonesHTML}
             </div>
         `;
+        // Auto-scroll to preview on mobile
+        if (window.innerWidth <= 900) {
+            setTimeout(() => {
+                previewBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
     } catch (err) {
         previewBox.innerHTML = `<p class="info-empty">Error al cargar la tabla: ${err.message}</p>`;
     }
