@@ -31,6 +31,17 @@ app.add_middleware(
 DATABASE_URL = os.environ.get('DATABASE_URL')
 DB_PATH = os.environ.get('DB_PATH', 'bingo.db')
 
+# --- DB CONNECTION POOL FOR POSTGRES (PRODUCTION) ---
+pg_pool = None
+if DATABASE_URL:
+    try:
+        from psycopg2.pool import ThreadedConnectionPool
+        # Connection pool with 2 to 40 reusable connections
+        pg_pool = ThreadedConnectionPool(2, 40, dsn=DATABASE_URL)
+        print("Pool de conexiones PostgreSQL (2 a 40) inicializado con éxito.")
+    except Exception as e:
+        print(f"Error al inicializar el pool de conexiones: {e}")
+
 # --- DB ABSTRACTION WRAPPER PARA POSTGRES ---
 class PostgresCursorWrapper:
     def __init__(self, pg_cursor):
@@ -64,17 +75,24 @@ class PostgresConnWrapper:
         self.pg_conn.commit()
         
     def close(self):
-        self.pg_conn.close()
+        # En el caso de pool, no cerramos la conexión física, pero este wrapper
+        # puede llamarse de todas formas. Hacemos pass ya que putconn lo maneja.
+        pass
 
 # --- LÓGICA DE BASE DE DATOS (Manejador de Conexiones) ---
 def get_db():
-    if DATABASE_URL:
-        conn = psycopg2.connect(DATABASE_URL)
-        wrapped = PostgresConnWrapper(conn)
+    if DATABASE_URL and pg_pool:
+        conn = None
         try:
+            conn = pg_pool.getconn()
+            wrapped = PostgresConnWrapper(conn)
             yield wrapped
+        except Exception as e:
+            print(f"Error al obtener conexión del pool: {e}")
+            raise HTTPException(status_code=500, detail="Base de datos saturada, por favor intenta de nuevo.")
         finally:
-            wrapped.close()
+            if conn:
+                pg_pool.putconn(conn)
     else:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         conn.row_factory = sqlite3.Row
