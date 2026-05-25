@@ -613,7 +613,25 @@ def admin_list_all_tickets(current_admin: Dict[str, Any] = Depends(get_admin_use
     """, (active['id'], now_str))
     
     tickets = [dict(t) for t in cursor.fetchall()]
-    return {"tickets": tickets}
+    
+    # Calculate stats
+    cursor.execute("SELECT MAX(tabla_id) as max_id FROM cartones_maestros;")
+    max_tabla_row = cursor.fetchone()
+    total_tablas = max_tabla_row['max_id'] if max_tabla_row and max_tabla_row['max_id'] else 500
+    
+    all_tablas = set(range(1, total_tablas + 1))
+    used_tablas = set([t['tabla_id'] for t in tickets])
+    disponibles = sorted(list(all_tablas - used_tablas))
+    
+    stats = {
+        "total": total_tablas,
+        "vendidos": len([t for t in tickets if t['estado'] == 'PAGADO']),
+        "reservados": len([t for t in tickets if t['estado'] == 'RESERVADO']),
+        "disponibles_count": len(disponibles),
+        "disponibles_list": disponibles
+    }
+    
+    return {"tickets": tickets, "stats": stats}
 
 @app.post("/api/admin/tickets/{ticket_id}/approve")
 def admin_approve_ticket(ticket_id: int, current_admin: Dict[str, Any] = Depends(get_admin_user), db: sqlite3.Connection = Depends(get_db)):
@@ -631,6 +649,20 @@ def admin_approve_ticket(ticket_id: int, current_admin: Dict[str, Any] = Depends
     db.commit()
     
     return {"message": f"Pago aprobado con éxito. Tabla #{ticket['tabla_id']} bloqueada e incorporada al juego."}
+
+@app.delete("/api/admin/tickets/{ticket_id}")
+def admin_delete_ticket(ticket_id: int, current_admin: Dict[str, Any] = Depends(get_admin_user), db: sqlite3.Connection = Depends(get_db)):
+    """Elimina permanentemente un ticket (reservado o pagado) para liberar la tabla o rechazar la compra."""
+    cursor = db.cursor()
+    cursor.execute("SELECT id, estado, tabla_id FROM tickets_venta WHERE id = ?;", (ticket_id,))
+    ticket = cursor.fetchone()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket no encontrado.")
+        
+    cursor.execute("DELETE FROM tickets_venta WHERE id = ?;", (ticket_id,))
+    db.commit()
+    
+    return {"message": f"Ticket de tabla #{ticket['tabla_id']} eliminado/rechazado correctamente."}
 
 @app.post("/api/admin/partida/start")
 def admin_start_game(current_admin: Dict[str, Any] = Depends(get_admin_user), db: sqlite3.Connection = Depends(get_db)):

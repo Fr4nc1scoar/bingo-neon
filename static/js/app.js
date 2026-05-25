@@ -650,6 +650,13 @@ async function fetchGameState() {
         // 1. Actualizar el bolillero en pantalla
         const balls = data.bolas_extraidas || [];
         const lastBall = balls.length > 0 ? balls[balls.length - 1] : null;
+
+        const currentBallsListStr = balls.join(",");
+        if (state.lastBallsListStr && state.lastBallsListStr !== currentBallsListStr && balls.length > (state.lastBallsCount || 0)) {
+            playNewBallBeep(); // Nuevo sonido sutil para cada balota nueva
+        }
+        state.lastBallsListStr = currentBallsListStr;
+        state.lastBallsCount = balls.length;
         
         const sphere = document.getElementById("game-ball-sphere");
         const bNum = document.getElementById("game-ball-number");
@@ -736,7 +743,14 @@ async function fetchGameState() {
                             for (let c = 0; c < 5; c++) {
                                 const l = letters[c];
                                 if (carton[l][r] === b) {
-                                    state.daubedCells[`${ticket.ticket_id}_${carton.posicion}_${r}_${c}`] = true;
+                                    // Filtro estricto para "Modalidad Sola"
+                                    if (data.modalidad === 'CUSTOM' && data.patron_custom) {
+                                        if (data.patron_custom[r] && data.patron_custom[r][c] === 1) {
+                                            state.daubedCells[`${ticket.ticket_id}_${carton.posicion}_${r}_${c}`] = true;
+                                        }
+                                    } else {
+                                        state.daubedCells[`${ticket.ticket_id}_${carton.posicion}_${r}_${c}`] = true;
+                                    }
                                 }
                             }
                         }
@@ -892,6 +906,26 @@ function playCountdownBeep(isFinal = false) {
             osc.stop(ctx.currentTime + 0.2);
         }
     } catch (e) { console.warn("Audio ignorado"); }
+}
+
+function playNewBallBeep() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        }
+    } catch (e) { console.warn("Audio balota ignorado"); }
 }
 
 function runGameStartCountdown() {
@@ -1276,10 +1310,24 @@ async function fetchAdminAllTickets() {
             headers: { 'Authorization': `Bearer ${state.user.token}` }
         });
         const data = await res.json();
+        
+        // Renderizar estadísticas si existen
+        if (data.stats) {
+            const statDisp = document.getElementById("stat-disponibles");
+            const statVend = document.getElementById("stat-vendidos");
+            const statResv = document.getElementById("stat-reservados");
+            if (statDisp) statDisp.innerText = data.stats.disponibles_count;
+            if (statVend) statVend.innerText = data.stats.vendidos;
+            if (statResv) statResv.innerText = data.stats.reservados;
+            
+            // Guardar disponibles en el estado para el modal
+            state.tablasDisponibles = data.stats.disponibles_list || [];
+        }
+
         const tbody = document.getElementById("admin-all-players-list");
         if (tbody) {
             if (!data.tickets || data.tickets.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:#9ca3af;">No hay jugadores activos ni reservados en la partida.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:#9ca3af;">No hay jugadores activos ni reservados en la partida.</td></tr>`;
             } else {
                 tbody.innerHTML = data.tickets.map(t => {
                     const statusColor = t.estado === 'PAGADO' ? '#10b981' : '#f59e0b';
@@ -1291,6 +1339,11 @@ async function fetchAdminAllTickets() {
                             <td><span style="background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); color:#818cf8; font-weight:800; padding:0.25rem 0.6rem; border-radius:6px;">Tabla #${t.tabla_id}</span></td>
                             <td><span style="background:${statusBg}; border:1px solid ${statusBorder}; color:${statusColor}; font-weight:700; font-size:0.85rem; padding:0.25rem 0.6rem; border-radius:6px;">${t.estado}</span></td>
                             <td><span style="font-family:monospace; color:#9ca3af; font-size:0.9rem;">${t.codigo_reserva}</span></td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="adminDeleteTicket(${t.id}, '${t.estado}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                    <i class="fa-solid ${t.estado === 'PAGADO' ? 'fa-rotate-left' : 'fa-xmark'}"></i> ${t.estado === 'PAGADO' ? 'Remover' : 'Rechazar'}
+                                </button>
+                            </td>
                         </tr>
                     `;
                 }).join('');
@@ -1316,6 +1369,73 @@ async function adminApproveTicket(ticketId) {
         showToast(err.message, "error");
     }
 }
+
+async function adminDeleteTicket(ticketId, estado) {
+    const actionName = estado === 'PAGADO' ? 'remover este pago aprobado' : 'rechazar esta reserva';
+    if (!confirm(`¿Estás seguro que deseas ${actionName}? La tabla quedará libre nuevamente.`)) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/admin/tickets/${ticketId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${state.user.token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Error al eliminar el ticket.");
+        
+        showToast(data.message, "success");
+        fetchAdminSales();
+        fetchAdminAllTickets();
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
+
+// LÓGICA DE TABS ADMIN
+function switchAdminTab(tabName) {
+    document.getElementById("btn-tab-bolillero").classList.remove("btn-primary");
+    document.getElementById("btn-tab-bolillero").classList.add("btn-secondary");
+    document.getElementById("btn-tab-ventas").classList.remove("btn-primary");
+    document.getElementById("btn-tab-ventas").classList.add("btn-secondary");
+
+    if (tabName === 'bolillero') {
+        document.getElementById("btn-tab-bolillero").classList.add("btn-primary");
+        document.getElementById("btn-tab-bolillero").classList.remove("btn-secondary");
+        document.getElementById("admin-tab-bolillero").style.display = "grid";
+        document.getElementById("admin-tab-ventas").style.display = "none";
+    } else {
+        document.getElementById("btn-tab-ventas").classList.add("btn-primary");
+        document.getElementById("btn-tab-ventas").classList.remove("btn-secondary");
+        document.getElementById("admin-tab-bolillero").style.display = "none";
+        document.getElementById("admin-tab-ventas").style.display = "flex";
+    }
+}
+
+// MODAL DE TABLAS DISPONIBLES
+function showDisponiblesModal() {
+    const container = document.getElementById("disponibles-list-container");
+    if (!container) return;
+    
+    if (!state.tablasDisponibles || state.tablasDisponibles.length === 0) {
+        container.innerHTML = `<p style="color:#9ca3af; width:100%; text-align:center;">No hay tablas disponibles. ¡Todo vendido!</p>`;
+    } else {
+        container.innerHTML = state.tablasDisponibles.map(num => `
+            <div style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #c084fc; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 800;">
+                #${num}
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById("disponibles-overlay").style.display = "flex";
+    setTimeout(() => { document.getElementById("disponibles-overlay").classList.add("active"); }, 10);
+}
+
+function closeDisponiblesModal() {
+    const overlay = document.getElementById("disponibles-overlay");
+    if (overlay) {
+        overlay.classList.remove("active");
+        setTimeout(() => { overlay.style.display = "none"; }, 400);
+    }
+}
+
 
 async function adminCreateGame() {
     try {

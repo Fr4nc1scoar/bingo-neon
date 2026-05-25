@@ -175,7 +175,17 @@
 
         <!-- PANTALLA 5: PANEL ADMINISTRADOR -->
         <main class="app-screen" id="screen-admin">
-            <div class="admin-grid">
+            <div class="admin-tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+                <button class="btn btn-sm btn-primary active" id="btn-tab-bolillero" onclick="switchAdminTab('bolillero')" style="font-weight: 700;">
+                    <i class="fa-solid fa-gamepad"></i> Bolillero
+                </button>
+                <button class="btn btn-sm btn-secondary" id="btn-tab-ventas" onclick="switchAdminTab('ventas')" style="font-weight: 700;">
+                    <i class="fa-solid fa-chart-pie"></i> Ventas y Estadísticas
+                </button>
+            </div>
+
+            <!-- PESTAÑA 1: BOLILLERO -->
+            <div id="admin-tab-bolillero" class="admin-grid">
                 <div class="admin-control glass-card">
                     <h2 class="card-title"><i class="fa-solid fa-screwdriver-wrench"></i> Consola del Bolillero</h2>
                     <div class="admin-status-box">
@@ -188,8 +198,8 @@
                             <option value="LINEA_Y_CARTON_LLENO">Línea y Cartón Lleno (Predeterminado)</option>
                             <option value="CARTON_LLENO">Solo Cartón Lleno</option>
                             <option value="LINEA">Solo Línea</option>
-                            <option value="CUSTOM">Patrón Personalizado (Solo Patrón Libre)</option>
-                            <option value="CUSTOM_Y_CARTON_LLENO">Patrón Libre + Cartón Lleno</option>
+                            <option value="CUSTOM">Modalidad (Solo Patrón Libre)</option>
+                            <option value="CUSTOM_Y_CARTON_LLENO">Modalidad + Cartón Lleno</option>
                         </select>
                     </div>
                     <div style="margin-bottom: 1rem; display:flex; align-items:center; gap:0.5rem;">
@@ -252,9 +262,34 @@
                     </div>
                 </div>
 
+                </div>
+            </div>
+
+            <!-- PESTAÑA 2: VENTAS Y ESTADÍSTICAS -->
+            <div id="admin-tab-ventas" style="display:none; flex-direction: column; gap: 1.5rem;">
+                <!-- Panel de Estadísticas (NUEVO) -->
+                <div class="glass-card" style="display: flex; gap: 1rem; justify-content: space-around; flex-wrap: wrap;">
+                    <div style="text-align: center; padding: 1rem; flex: 1; min-width: 120px; border-right: 1px solid rgba(255,255,255,0.1);">
+                        <i class="fa-solid fa-ticket" style="font-size: 1.5rem; color: #a855f7; margin-bottom: 0.5rem;"></i>
+                        <h4 style="margin:0; font-size: 0.8rem; color: #9ca3af;">Tablas Disponibles</h4>
+                        <div id="stat-disponibles" style="font-size: 2rem; font-weight: 800; color: #fff;">0</div>
+                        <button class="btn btn-sm" style="margin-top: 0.5rem; font-size: 0.7rem; background: rgba(168,85,247,0.2); color: #fff;" onclick="showDisponiblesModal()">Ver Cuáles</button>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; flex: 1; min-width: 120px; border-right: 1px solid rgba(255,255,255,0.1);">
+                        <i class="fa-solid fa-cart-shopping" style="font-size: 1.5rem; color: #10b981; margin-bottom: 0.5rem;"></i>
+                        <h4 style="margin:0; font-size: 0.8rem; color: #9ca3af;">Tablas Vendidas</h4>
+                        <div id="stat-vendidos" style="font-size: 2rem; font-weight: 800; color: #fff;">0</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; flex: 1; min-width: 120px;">
+                        <i class="fa-solid fa-clock-rotate-left" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+                        <h4 style="margin:0; font-size: 0.8rem; color: #9ca3af;">En Reserva</h4>
+                        <div id="stat-reservados" style="font-size: 2rem; font-weight: 800; color: #fff;">0</div>
+                    </div>
+                </div>
+
                 <!-- Aprobación de Pagos -->
-                <div class="admin-panel-section glass-card" style="grid-column: 1 / -1;">
-                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cash-register"></i> Aprobación de Pagos (Ventas)</h3>
+                <div class="admin-panel-section glass-card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-cash-register"></i> Aprobación de Pagos (Reservas Pendientes)</h3>
                     <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1rem;">Verifica y aprueba el pago de las tablas reservadas por los jugadores en tiempo real.</p>
                     <div class="table-responsive">
                         <table class="data-table">
@@ -265,21 +300,30 @@
                 </div>
 
                 <!-- Jugadores en Partida -->
-                <div class="admin-panel-section glass-card" style="grid-column: 1 / -1;">
-                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Jugadores en Partida</h3>
-                    <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1rem;">Todos los jugadores activos en la partida actual y sus cartones asignados.</p>
+                <div class="admin-panel-section glass-card">
+                    <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-users"></i> Jugadores en Partida (Vendidos)</h3>
+                    <p style="font-size:0.9rem; color:#9ca3af; margin-bottom:1rem;">Todos los jugadores activos en la partida actual y sus cartones asignados. Puedes remover a un jugador si te equivocaste al aprobar.</p>
                     <div class="table-responsive">
                         <table class="data-table">
-                            <thead><tr><th>Usuario</th><th>Tabla ID</th><th>Estado</th><th>Código Reserva</th></tr></thead>
+                            <thead><tr><th>Usuario</th><th>Tabla ID</th><th>Estado</th><th>Código Reserva</th><th>Acciones</th></tr></thead>
                             <tbody id="admin-all-players-list"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
+            </div>
         </main>
     </div>
 
     <!-- OVERLAYS PREMIUM DE PARTIDA Y GANADORES -->
+    <div id="disponibles-overlay" class="fullscreen-overlay" style="z-index: 2000;">
+        <div class="win-card glass-card" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fa-solid fa-ticket"></i> Tablas Disponibles</h2>
+            <div id="disponibles-list-container" style="overflow-y: auto; flex: 1; text-align: left; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border); display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;"></div>
+            <button class="btn btn-accent mt-4" style="min-width: 140px;" onclick="closeDisponiblesModal()">Cerrar</button>
+        </div>
+    </div>
+
     <div id="bingo-win-overlay" class="fullscreen-overlay">
         <div class="win-card glass-card">
             <div class="win-glow"></div>
