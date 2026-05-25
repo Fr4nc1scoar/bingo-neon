@@ -216,8 +216,8 @@ async function handleLogin(e) {
 
 async function handleRegister(e) {
     e.preventDefault();
-    const user = document.getElementById("reg-username").value;
-    const pass = document.getElementById("reg-password").value;
+    const user = document.getElementById("register-username").value;
+    const pass = document.getElementById("register-password").value;
     
     try {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -360,33 +360,42 @@ async function fetchMyLobbyTickets() {
 async function renderCatalogNumbers() {
     if (!state.user) return;
     
+    const grid = document.getElementById("catalog-numbers-grid");
+    if (!grid) return;
+    
+    let availableSet = new Set();
     try {
         // Cargar lista de tablas disponibles para la partida
         const res = await fetch(`${API_BASE}/api/tables/available`);
-        const data = await res.json();
-        const availableSet = new Set(data.tables);
-        
-        const grid = document.getElementById("catalog-numbers-grid");
-        let html = '';
-        
-        // Mostramos las primeras 500 tablas estáticas
-        for (let i = 1; i <= 500; i++) {
-            const isAvailable = availableSet.has(i);
-            const classes = ['catalog-cell'];
-            if (!isAvailable) classes.push('sold');
-            if (state.selectedTableId === i) classes.push('selected');
-            
-            html += `
-                <div class="${classes.join(' ')}" 
-                     onclick="${isAvailable ? `selectCatalogTable(${i})` : ''}">
-                    #${i}
-                </div>
-            `;
+        if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.tables)) {
+                availableSet = new Set(data.tables);
+            }
         }
-        grid.innerHTML = html;
     } catch (err) {
-        console.error("Error al renderizar catálogo:", err);
+        console.error("Error al obtener tablas disponibles:", err);
     }
+    
+    let html = '';
+    // Mostramos las primeras 500 tablas estáticas
+    // Si la API falla, por defecto se asume que están disponibles para no bloquear la interacción
+    const fallbackAvailable = availableSet.size === 0;
+    
+    for (let i = 1; i <= 500; i++) {
+        const isAvailable = fallbackAvailable ? true : availableSet.has(i);
+        const classes = ['catalog-cell'];
+        if (!isAvailable) classes.push('sold');
+        if (state.selectedTableId === i) classes.push('selected');
+        
+        html += `
+            <div class="${classes.join(' ')}" 
+                 onclick="${isAvailable ? `selectCatalogTable(${i})` : ''}">
+                #${i}
+            </div>
+        `;
+    }
+    grid.innerHTML = html;
 }
 
 function filterCatalogTable() {

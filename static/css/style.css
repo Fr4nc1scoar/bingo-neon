@@ -1502,26 +1502,28 @@ input:checked + .slider:before {
     object-fit: cover;
 }
 
-/* Flex-wrap layout: On mobile, nav-menu breaks to a new line */
+/* Grid layout: On mobile, logo and user-badge on top, nav-menu below */
 .app-header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    display: grid;
+    grid-template-areas: 
+        "logo badge"
+        "menu menu";
+    grid-template-columns: 1fr auto;
     align-items: center;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
+    gap: 0.5rem 1rem;
     border-bottom: 1px solid var(--glass-border);
-    gap: 0;
 }
 
 .logo {
-    order: 1;
+    grid-area: logo;
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
 .user-badge {
-    order: 2;
+    grid-area: badge;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1534,15 +1536,14 @@ input:checked + .slider:before {
 }
 
 .nav-menu {
-    order: 3;
-    width: 100%;
+    grid-area: menu;
     display: flex;
     gap: 0.4rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 0.75rem 0 0.5rem 0;
-    margin-top: 0.5rem;
+    padding: 0.5rem 0 0.25rem 0;
+    width: 100%;
 }
 .nav-menu::-webkit-scrollbar { display: none; }
 
@@ -1599,37 +1600,28 @@ input:checked + .slider:before {
    RESPONSIVE - DESKTOP (> 680px): Horizontal single-row header
    ========================================================================== */
 @media (min-width: 680px) {
-    /* On desktop the header-top-row wrapper becomes invisible;
-       logo and badge become flex siblings with the nav */
     .app-header {
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.85rem 0;
-    }
-    .header-top-row {
         display: flex;
-        flex: 0 0 auto;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
-        gap: 0.75rem;
-        order: 1;
-        margin-bottom: 0;
+        padding: 0.85rem 0;
+        gap: 1.5rem;
+    }
+    .logo {
+        flex-shrink: 0;
     }
     .nav-menu {
-        order: 2;
-        width: auto;
-        flex: 1;
+        display: flex;
         justify-content: center;
+        flex: 1;
         margin-top: 0;
         padding: 0;
-        overflow-x: auto;
-        scrollbar-width: none;
+        width: auto;
+        overflow-x: visible;
     }
     .user-badge {
-        order: 3;
         flex-shrink: 0;
-        /* On desktop, hide the badge that's inside header-top-row;
-           it is re-rendered outside on desktop via JS */
     }
     .username-display { display: inline; }
 }

@@ -620,7 +620,7 @@ def admin_list_reserved(current_admin: Dict[str, Any] = Depends(get_admin_user),
     """Lista todos los tickets que están en espera de aprobación de pago para la partida activa."""
     cursor = db.cursor()
     
-    cursor.execute("SELECT id FROM partidas WHERE estado = 'ACTIVA' ORDER BY id DESC LIMIT 1;")
+    cursor.execute("SELECT id FROM partidas ORDER BY id DESC LIMIT 1;")
     active = cursor.fetchone()
     if not active:
         return {"tickets": []}
@@ -642,7 +642,7 @@ def admin_list_all_tickets(current_admin: Dict[str, Any] = Depends(get_admin_use
     """Lista todos los tickets (PAGADOS y RESERVADOS vigentes) para la partida activa o en curso."""
     cursor = db.cursor()
     
-    cursor.execute("SELECT id FROM partidas WHERE estado IN ('ACTIVA', 'JUGANDO') ORDER BY id DESC LIMIT 1;")
+    cursor.execute("SELECT id FROM partidas ORDER BY id DESC LIMIT 1;")
     active = cursor.fetchone()
     if not active:
         return {"tickets": []}
