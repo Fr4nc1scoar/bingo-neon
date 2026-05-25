@@ -400,7 +400,6 @@ def reserve_table(data: TableReserve, current_user: Dict[str, Any] = Depends(get
 
 # --- LÓGICA DE MONITOREO DE PARTIDA EN VIVO (Para Jugadores) ---
 
-@app.get("/api/game/state")
 def get_game_state_data(partida_id: int, cursor, current_user_id: int = None):
     cursor.execute("SELECT estado, modalidad, patron_custom FROM partidas WHERE id = ?;", (partida_id,))
     partida = cursor.fetchone()
