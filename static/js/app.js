@@ -568,6 +568,33 @@ function renderSingleCartonHTML(carton, title, ticketId = null) {
     `;
 }
 
+// --- RENDERIZADO DEL MINI-PATRÓN ---
+function renderMiniPattern(objective, customPatternCoords) {
+    let cellsHTML = '';
+    for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+            let isActive = false;
+            let isFree = (r === 2 && c === 2);
+            
+            if (objective === 'CARTÓN LLENO') {
+                isActive = true;
+            } else if (objective === 'CUALQUIER LÍNEA') {
+                if (r === 2) isActive = true; // Línea horizontal representativa
+            } else if (objective === 'PATRÓN PERSONALIZADO' && customPatternCoords) {
+                const found = customPatternCoords.find(coord => coord[0] === r && coord[1] === c);
+                if (found) isActive = true;
+            }
+            
+            let classes = 'mini-cell';
+            if (isActive && !isFree) classes += ' active';
+            if (isFree) classes += ' free';
+            
+            cellsHTML += `<div class="${classes}"></div>`;
+        }
+    }
+    return cellsHTML;
+}
+
 // --- SALA DE JUEGO EN VIVO ---
 async function fetchGameState() {
     if (!state.user) return;
@@ -641,6 +668,36 @@ async function fetchGameState() {
         } else {
             bNum.innerText = "-";
             bLet.innerText = "-";
+        }
+        
+        // 1.5. Determinar Objetivo Actual y renderizar visualización
+        let currentObjective = "Cargando...";
+        let hasLineWinner = data.ganadores && data.ganadores.some(w => w.patron !== "Cartón Lleno" && w.patron !== "Patrón Personalizado");
+        
+        if (data.modalidad === 'LINEA_Y_CARTON_LLENO') {
+            currentObjective = hasLineWinner ? 'CARTÓN LLENO' : 'CUALQUIER LÍNEA';
+        } else if (data.modalidad === 'CUSTOM_Y_CARTON_LLENO') {
+            let hasCustomWinner = data.ganadores && data.ganadores.some(w => w.patron === "Patrón Personalizado");
+            currentObjective = hasCustomWinner ? 'CARTÓN LLENO' : 'PATRÓN PERSONALIZADO';
+        } else if (data.modalidad === 'CARTON_LLENO') {
+            currentObjective = 'CARTÓN LLENO';
+        } else if (data.modalidad === 'LINEA') {
+            currentObjective = 'CUALQUIER LÍNEA';
+        } else if (data.modalidad === 'CUSTOM') {
+            currentObjective = 'PATRÓN PERSONALIZADO';
+        }
+
+        const modBadge = document.getElementById("game-active-modalidad");
+        if (modBadge) modBadge.innerText = currentObjective;
+
+        const miniGrid = document.getElementById("objective-mini-grid");
+        if (miniGrid) {
+            miniGrid.innerHTML = renderMiniPattern(currentObjective, data.patron_custom);
+        }
+
+        const ballsCountText = document.getElementById("game-balls-count-text");
+        if (ballsCountText && balls) {
+            ballsCountText.innerText = `Bolitas extraídas: ${balls.length}/75`;
         }
         
         // 2. Historial de las 5 balotas recientes

@@ -5,6 +5,7 @@ import json
 import sqlite3
 import psycopg2
 import psycopg2.extras
+import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
@@ -521,6 +522,7 @@ def get_game_state_data(partida_id: int, cursor, current_user_id: int = None):
         "partida_id": partida_id,
         "estado": estado_partida,
         "modalidad": modalidad_partida,
+        "patron_custom": custom_pattern_coords,
         "bolas_extraidas": bolas,
         "tickets": tickets_usuario,
         "ganadores": ganadores
@@ -557,12 +559,14 @@ def admin_create_partida(data: PartidaCreate, current_admin: Dict[str, Any] = De
     new_partida_id = cursor.fetchone()[0]
     
     if data.keep_tickets and last_partida_id:
-        cursor.execute(f"""
-            INSERT INTO tickets_venta (partida_id, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta)
-            SELECT {new_partida_id}, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta 
-            FROM tickets_venta 
-            WHERE partida_id = ? AND estado = 'PAGADO';
-        """, (last_partida_id,))
+        cursor.execute("SELECT tabla_id, usuario_id, estado, reservado_hasta FROM tickets_venta WHERE partida_id = ? AND estado = 'PAGADO';", (last_partida_id,))
+        old_tickets = cursor.fetchall()
+        for ot in old_tickets:
+            new_code = uuid.uuid4().hex[:8].upper()
+            cursor.execute("""
+                INSERT INTO tickets_venta (partida_id, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta)
+                VALUES (?, ?, ?, ?, ?, ?);
+            """, (new_partida_id, ot['tabla_id'], ot['usuario_id'], new_code, ot['estado'], ot['reservado_hasta']))
         
     db.commit()
     
@@ -708,51 +712,10 @@ def admin_draw_ball(config: DrawConfig, current_admin: Dict[str, Any] = Depends(
     
     db.commit()
     
-    # Recalcular si hay ganadores inmediatamente tras esta extracción
-    drawn.append(new_ball)
-    drawn_set = set(drawn)
+    # Recalcular ganadores garantizando que se respeta la progresión (ej. ignorar LINEA si ya hubo una anterior).
+    state_after = get_game_state_data(partida_id, cursor)
+    ganadores = state_after.get('ganadores', [])
     
-    cursor.execute("SELECT tv.id, tv.tabla_id, u.username FROM tickets_venta tv JOIN usuarios u ON tv.usuario_id = u.id WHERE tv.partida_id = ? AND tv.estado = 'PAGADO';", (partida_id,))
-    pagados = cursor.fetchall()
-    
-    ganadores = []
-    for ticket in pagados:
-        cursor.execute("SELECT b_column, i_column, n_column, g_column, o_column, posicion FROM cartones_maestros WHERE tabla_id = ?;", (ticket['tabla_id'],))
-        cartones_db = cursor.fetchall()
-        board = []
-        for c in cartones_db:
-            board.append({
-                "B": json.loads(c[0]),
-                "I": json.loads(c[1]),
-                "N": json.loads(c[2]),
-                "G": json.loads(c[3]),
-                "O": json.loads(c[4])
-            })
-            
-        win_line, pos_line, pat_line, cells_line = False, None, None, []
-        win_full, pos_full, pat_full, cells_full = False, None, None, []
-        
-        if game_modality in ('LINEA', 'LINEA_Y_CARTON_LLENO'):
-            win_line, pos_line, pat_line, cells_line = check_table_win(board, drawn_set, 'LINEA')
-        if game_modality in ('CARTON_LLENO', 'LINEA_Y_CARTON_LLENO'):
-            win_full, pos_full, pat_full, cells_full = check_table_win(board, drawn_set, 'CARTON_LLENO')
-        
-        # En el bolillero admin priorizamos Cartón Lleno, luego Línea.
-        if win_full:
-            ganadores.append({
-                "tabla_id": ticket['tabla_id'],
-                "username": ticket['username'],
-                "patron": "Cartón Lleno",
-                "carton_posicion": pos_full
-            })
-        elif win_line:
-            ganadores.append({
-                "tabla_id": ticket['tabla_id'],
-                "username": ticket['username'],
-                "patron": pat_line,
-                "carton_posicion": pos_line
-            })
-            
     # Si hay algún ganador en modo Cartón Lleno o si se alcanzó algún criterio, el admin puede decidir finalizar
     # Para fines del flujo, si hay ganadores, lo informamos.
     

@@ -125,10 +125,6 @@
                         </div>
                         <p class="active-ball-caption">Última Bolita Extraída</p>
                     </div>
-                    <div class="recent-balls-box">
-                        <h4>Bolitas Recientes</h4>
-                        <div class="recent-balls-row" id="game-recent-balls"></div>
-                    </div>
                     <div class="game-controls-box">
                         <div class="toggle-control">
                             <span class="toggle-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Marcado</span>
@@ -137,22 +133,30 @@
                                 <span class="slider round"></span>
                             </label>
                         </div>
-                        <button class="btn btn-secondary btn-block mt-3" onclick="checkCurrentBingoManual()">
-                            <i class="fa-solid fa-trophy"></i> Gritar ¡BINGO!
-                        </button>
                     </div>
                 </div>
                 <div class="game-main-panel">
                     <div class="player-board-wrapper">
                         <div class="board-header">
-                            <div>
-                                <h3>Mis Cartones de Juego (Tabla #<span id="game-active-table-id">-</span>)</h3>
-                                <div class="modality-badge-container mt-1">
-                                    <span class="modality-label"><i class="fa-solid fa-circle-question"></i> Modalidad:</span>
-                                    <span id="game-active-modalidad" class="modality-badge">Cargando...</span>
+                            <div style="flex:1;">
+                                <h3 style="margin-bottom:0.25rem;">Mis Cartones de Juego (Tabla #<span id="game-active-table-id">-</span>)</h3>
+                                <div style="font-size: 0.85rem; color: #a855f7; font-weight: 700; margin-bottom: 0.5rem;" id="game-balls-count-text">Bolitas extraídas: 0/75</div>
+                                
+                                <!-- Mini-grid para Objetivo Actual -->
+                                <div class="objective-container" style="display:flex; align-items:center; gap: 1rem; background: rgba(0,0,0,0.25); padding: 0.5rem; border-radius: 8px; border: 1px solid var(--glass-border); width: fit-content;">
+                                    <div class="mini-pattern-grid" id="objective-mini-grid"></div>
+                                    <div style="display:flex; flex-direction:column;">
+                                        <span style="font-size: 0.75rem; color:#9ca3af; text-transform:uppercase; letter-spacing: 1px;">Objetivo Actual:</span>
+                                        <span id="game-active-modalidad" style="font-weight: 800; color: #fff; font-size: 1rem; text-shadow: 0 0 10px rgba(168, 85, 247, 0.4);">Cargando...</span>
+                                    </div>
                                 </div>
                             </div>
                             <span class="ticket-status-tag" id="game-ticket-status">Activo</span>
+                        </div>
+                        
+                        <div class="recent-balls-box" style="margin-top: 1rem;">
+                            <h4 style="margin-bottom: 0.5rem;">Bolitas Recientes</h4>
+                            <div class="recent-balls-row" id="game-recent-balls"></div>
                         </div>
                         <div class="table-selector-tabs" id="game-tables-tabs"></div>
                         <div class="grid-4-cartones" id="game-cartones-grid"></div>
