@@ -85,13 +85,19 @@ def get_db():
         conn = None
         try:
             conn = pg_pool.getconn()
-            wrapped = PostgresConnWrapper(conn)
-            yield wrapped
         except Exception as e:
             print(f"Error al obtener conexión del pool: {e}")
             raise HTTPException(status_code=500, detail="Base de datos saturada, por favor intenta de nuevo.")
+            
+        try:
+            wrapped = PostgresConnWrapper(conn)
+            yield wrapped
         finally:
             if conn:
+                try:
+                    conn.rollback() # Prevenir InFailedSqlTransaction limpiando el estado
+                except:
+                    pass
                 pg_pool.putconn(conn)
     else:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -727,6 +733,31 @@ def admin_draw_ball(config: DrawConfig, current_admin: Dict[str, Any] = Depends(
         
     # Extraer bola única
     available = [n for n in range(1, 76) if n not in drawn]
+    
+    # Verificar si la partida ya fue completada antes de sacar una nueva bola
+    state_data = get_game_state_data(partida_id, cursor)
+    current_winners = state_data.get('ganadores', [])
+    has_full = any(w['patron'] == 'Cartón Lleno' for w in current_winners)
+    has_custom = any(w['patron'] == 'Patrón Personalizado' for w in current_winners)
+    has_line = any(w['patron'] not in ['Cartón Lleno', 'Patrón Personalizado'] for w in current_winners)
+
+    is_finished = False
+    if game_modality == 'LINEA_Y_CARTON_LLENO' and has_full:
+        is_finished = True
+    elif game_modality == 'CUSTOM_Y_CARTON_LLENO' and has_full:
+        is_finished = True
+    elif game_modality == 'CARTON_LLENO' and has_full:
+        is_finished = True
+    elif game_modality == 'LINEA' and has_line:
+        is_finished = True
+    elif game_modality == 'CUSTOM' and has_custom:
+        is_finished = True
+
+    if is_finished:
+        cursor.execute("UPDATE partidas SET estado = 'FINALIZADA' WHERE id = ?;", (partida_id,))
+        db.commit()
+        raise HTTPException(status_code=400, detail="El juego ya ha finalizado (modalidad completada). No se pueden extraer más bolitas.")
+        
     new_ball = random.choice(available)
     next_order = len(drawn) + 1
     

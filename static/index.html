@@ -201,8 +201,14 @@
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:1rem;">
                         <button class="btn btn-accent btn-sm" onclick="adminCreateGame()"><i class="fa-solid fa-plus"></i> Crear Nueva Partida</button>
                         <button class="btn btn-primary btn-sm" onclick="adminStartGame()"><i class="fa-solid fa-play"></i> Iniciar Juego</button>
-                        <button class="btn btn-success btn-sm" onclick="adminDrawBall()"><i class="fa-solid fa-random"></i> Extraer Siguiente Bola</button>
+                        <button class="btn btn-success btn-sm" onclick="adminDrawBall()" id="btn-manual-draw"><i class="fa-solid fa-random"></i> Extraer Siguiente Bolita</button>
                         <button class="btn btn-danger btn-sm" onclick="adminEndGame()"><i class="fa-solid fa-stop"></i> Finalizar Partida</button>
+                    </div>
+                    <!-- Controles de Extracción Automática -->
+                    <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:0.75rem; background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                        <button id="btn-auto-draw" class="btn btn-sm" style="background:var(--gradient-accent); color:white; width:100%; box-shadow: 0 0 10px rgba(244,114,182,0.3);" onclick="toggleAutoDraw()">
+                            <i class="fa-solid fa-robot"></i> Iniciar Modo Auto (5s)
+                        </button>
                     </div>
                     <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
                         <h4>Herramientas de Mantenimiento</h4>
