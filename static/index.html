@@ -117,29 +117,20 @@
         <!-- PANTALLA 4: SALA DE JUEGO -->
         <main class="app-screen" id="screen-game">
             <div class="game-layout">
-                <div class="game-sidebar glass-card">
-                    <div class="active-ball-container">
-                        <span class="active-ball-letter" id="game-ball-letter">-</span>
-                        <div class="active-ball-sphere" id="game-ball-sphere">
-                            <span class="active-ball-number" id="game-ball-number">-</span>
-                        </div>
-                        <p class="active-ball-caption">Última Bolita Extraída</p>
-                    </div>
-                    <div class="game-controls-box">
-                        <div class="toggle-control">
-                            <span class="toggle-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Marcado</span>
-                            <label class="switch">
-                                <input type="checkbox" id="game-toggle-autodaub" checked onchange="toggleAutoDaub()">
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="game-main-panel">
+                <div class="game-main-panel" style="grid-column: 1 / -1;">
                     <div class="player-board-wrapper">
                         <div class="board-header">
                             <div style="flex:1;">
-                                <h3 style="margin-bottom:0.25rem;">Mis Cartones de Juego (Tabla #<span id="game-active-table-id">-</span>)</h3>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3 style="margin-bottom:0.25rem;">Mis Cartones de Juego (Tabla #<span id="game-active-table-id">-</span>)</h3>
+                                    <div class="toggle-control" style="margin: 0; transform: scale(0.85); transform-origin: right center;">
+                                        <span class="toggle-label" style="font-size:0.8rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="game-toggle-autodaub" checked onchange="toggleAutoDaub()">
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div style="font-size: 0.85rem; color: #a855f7; font-weight: 700; margin-bottom: 0.5rem;" id="game-balls-count-text">Bolitas extraídas: 0/75</div>
                                 
                                 <!-- Mini-grid para Objetivo Actual -->
@@ -151,12 +142,25 @@
                                     </div>
                                 </div>
                             </div>
-                            <span class="ticket-status-tag" id="game-ticket-status">Activo</span>
+                            <span class="ticket-status-tag" id="game-ticket-status" style="align-self: flex-start;">Activo</span>
                         </div>
                         
-                        <div class="recent-balls-box" style="margin-top: 1rem;">
-                            <h4 style="margin-bottom: 0.5rem;">Bolitas Recientes</h4>
-                            <div class="recent-balls-row" id="game-recent-balls"></div>
+                        <!-- Panel Superior (Bolita Actual + Bolitas Recientes) -->
+                        <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-top:1rem; margin-bottom:1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; align-items: center;">
+                            <div class="active-ball-container" style="display:flex; align-items:center; gap: 1rem; margin-bottom: 0;">
+                                <div class="active-ball-sphere" id="game-ball-sphere" style="width: 80px; height: 80px; margin: 0;">
+                                    <span class="active-ball-number" id="game-ball-number" style="font-size: 2.2rem;">-</span>
+                                </div>
+                                <div>
+                                    <span class="active-ball-letter" id="game-ball-letter" style="font-size: 1.2rem; margin-bottom:0;">-</span>
+                                    <p class="active-ball-caption" style="margin:0;">Última</p>
+                                </div>
+                            </div>
+                            <div style="width: 1px; height: 60px; background: rgba(255,255,255,0.1); display: block;"></div>
+                            <div class="recent-balls-box" style="margin-bottom: 0; background: transparent; border: none; padding: 0; flex: 1; min-width: 200px;">
+                                <h4 style="margin-bottom: 0.5rem; font-size: 0.75rem;">Anteriores</h4>
+                                <div class="recent-balls-row" id="game-recent-balls" style="justify-content: flex-start;"></div>
+                            </div>
                         </div>
                         <div class="table-selector-tabs" id="game-tables-tabs"></div>
                         <div class="grid-4-cartones" id="game-cartones-grid"></div>

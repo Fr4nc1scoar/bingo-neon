@@ -1,8 +1,8 @@
 /* ==========================================================================
-   BINGO DIGITAL PREMIUM - ESTILOS PREMIUM (GLASSMORPHISM & NEÓN)
+   BINGO DIGITAL PREMIUM - ESTILOS PREMIUM (GLASSMORPHISM & NEÃ“N)
    ========================================================================== */
 
-/* --- Configuración de Variables --- */
+/* --- ConfiguraciÃ³n de Variables --- */
 :root {
     --bg-dark: #080c14;
     --bg-deep: #05070c;
@@ -10,7 +10,7 @@
     --glass-border: rgba(255, 255, 255, 0.06);
     --glass-highlight: rgba(255, 255, 255, 0.1);
     
-    /* Colores por columna de Bingo (Neón Estándar) */
+    /* Colores por columna de Bingo (NeÃ³n EstÃ¡ndar) */
     --color-b: #ff4757; /* Coral */
     --color-i: #00d2d3; /* Cyan */
     --color-n: #10ac84; /* Emerald */
@@ -145,7 +145,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- PANTALLA DE AUTENTICACIÓN (LOGIN/REGISTRO) --- */
+/* --- PANTALLA DE AUTENTICACIÃ“N (LOGIN/REGISTRO) --- */
 #screen-auth {
     display: none;
     align-items: center;
@@ -506,7 +506,7 @@ body {
     border: 1px solid #dc2626;
 }
 
-/* --- CATÁLOGO DE TABLAS MAESTRAS --- */
+/* --- CATÃLOGO DE TABLAS MAESTRAS --- */
 .catalog-header {
     display: flex;
     align-items: center;
@@ -661,7 +661,7 @@ body {
     font-size: 1.5rem;
 }
 
-/* --- DISEÑO DE LOS CARTONES DE BINGO (EL CORE DE LA ESTÉTICA) --- */
+/* --- DISEÃ‘O DE LOS CARTONES DE BINGO (EL CORE DE LA ESTÃ‰TICA) --- */
 .board-preview-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -676,7 +676,7 @@ body {
     min-width: 0; /* Prevents grid children from overflowing */
 }
 
-/* No 1-column override on small screens — we always want 2x2 */
+/* No 1-column override on small screens â€” we always want 2x2 */
 
 .carton-wrapper {
     background: rgba(0, 0, 0, 0.25);
@@ -722,7 +722,7 @@ body {
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
-/* Clases específicas de columna para cabecera */
+/* Clases especÃ­ficas de columna para cabecera */
 .header-b { background: rgba(255, 71, 87, 0.15); border: 1px solid var(--color-b); color: var(--color-b) !important; text-shadow: 0 0 10px rgba(255, 71, 87, 0.3) !important; }
 .header-i { background: rgba(0, 210, 211, 0.15); border: 1px solid var(--color-i); color: var(--color-i) !important; text-shadow: 0 0 10px rgba(0, 210, 211, 0.3) !important; }
 .header-n { background: rgba(16, 172, 132, 0.15); border: 1px solid var(--color-n); color: var(--color-n) !important; text-shadow: 0 0 10px rgba(16, 172, 132, 0.3) !important; }
@@ -760,7 +760,7 @@ body {
     text-transform: uppercase;
 }
 
-/* Efectos de números marcados (Daubed) */
+/* Efectos de nÃºmeros marcados (Daubed) */
 .carton-number-cell.daubed {
     position: relative;
     border-color: transparent !important;
@@ -772,7 +772,7 @@ body {
     100% { transform: scale(1); }
 }
 
-/* Colores específicos de Daubed correspondientes a la columna */
+/* Colores especÃ­ficos de Daubed correspondientes a la columna */
 .carton-number-cell.daubed.col-b {
     background: radial-gradient(circle, var(--color-b) 0%, rgba(255, 71, 87, 0.6) 100%);
     box-shadow: 0 0 12px rgba(255, 71, 87, 0.5);
@@ -794,7 +794,7 @@ body {
     box-shadow: 0 0 12px rgba(255, 159, 67, 0.5);
 }
 
-/* Resaltado del patrón ganador */
+/* Resaltado del patrÃ³n ganador */
 .carton-number-cell.winning-cell {
     animation: winPulse 1.2s infinite ease-in-out;
     border: 2px solid #fff !important;
@@ -1069,7 +1069,7 @@ input:checked + .slider:before {
     font-weight: 800;
 }
 
-/* --- PANEL DE ADMINISTRACIÓN --- */
+/* --- PANEL DE ADMINISTRACIÃ“N --- */
 .admin-grid {
     display: grid;
     grid-template-columns: 0.8fr 1.2fr;
@@ -1223,7 +1223,7 @@ input:checked + .slider:before {
     50% { transform: scale(1.15); }
 }
 
-/* Confetti animado básico */
+/* Confetti animado bÃ¡sico */
 .confetti-holder {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -1255,7 +1255,7 @@ input:checked + .slider:before {
 .border-top { border-top: 1px solid var(--glass-border); }
 .text-center { text-align: center; }
 
-/* PESTAÑAS DE SELECCIÓN DE TABLA (PREMIUM NEON CHIPS) */
+/* PESTAÃ‘AS DE SELECCIÃ“N DE TABLA (PREMIUM NEON CHIPS) */
 .table-selector-tabs {
     display: flex;
     gap: 0.75rem;
@@ -1322,7 +1322,7 @@ input:checked + .slider:before {
     box-shadow: 0 0 8px rgba(168, 85, 247, 0.1);
 }
 
-/* RESPONSIVIDAD MÓVIL EXCEPCIONAL (PREMIUM MOBILE UX) */
+/* RESPONSIVIDAD MÃ“VIL EXCEPCIONAL (PREMIUM MOBILE UX) */
 @media (max-width: 768px) {
     .game-layout {
         flex-direction: column;
@@ -1376,7 +1376,7 @@ input:checked + .slider:before {
         padding: 0.5rem;
     }
     
-    /* Grilla de 4 cartones colapsada en 1 sola columna súper nítida y táctil */
+    /* Grilla de 4 cartones colapsada en 1 sola columna sÃºper nÃ­tida y tÃ¡ctil */
     .grid-4-cartones {
         grid-template-columns: 1fr !important;
         gap: 1.5rem;
@@ -1392,7 +1392,7 @@ input:checked + .slider:before {
     }
     
     .carton-number-cell {
-        font-size: 1.1rem; /* Más grande en móvil para toques precisos */
+        font-size: 1.1rem; /* MÃ¡s grande en mÃ³vil para toques precisos */
         height: 48px;
     }
     
@@ -1474,7 +1474,7 @@ input:checked + .slider:before {
     line-height: 1.4;
 }
 
-/* CELDA INTERACTIVA DIBUJO PATRÓN */
+/* CELDA INTERACTIVA DIBUJO PATRÃ“N */
 .custom-pattern-cell {
     aspect-ratio: 1;
     background: rgba(255, 255, 255, 0.05);
@@ -1656,7 +1656,7 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   RESPONSIVE - TABLET (≤ 900px)
+   RESPONSIVE - TABLET (â‰¤ 900px)
    ========================================================================== */
 @media (max-width: 900px) {
     .lobby-grid { grid-template-columns: 1fr; }
@@ -1665,7 +1665,7 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   RESPONSIVE - MOBILE (≤ 768px)
+   RESPONSIVE - MOBILE (â‰¤ 768px)
    ========================================================================== */
 @media (max-width: 768px) {
     /* Container edges */
@@ -1815,7 +1815,7 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   RESPONSIVE - SMALL PHONES (≤ 480px)
+   RESPONSIVE - SMALL PHONES (â‰¤ 480px)
    ========================================================================== */
 @media (max-width: 480px) {
     .app-container { padding: 0 0.5rem; }
@@ -2010,33 +2010,30 @@ input:checked + .slider:before {
     to { transform: scale(1.05); }
 }
 
+/* --- MINI PATTERN GRID --- */
+.mini-pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 3px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
 
- / *   - - -   M I N I   P A T T E R N   G R I D   - - -   * / 
- . m i n i - p a t t e r n - g r i d   { 
-         d i s p l a y :   g r i d ; 
-         g r i d - t e m p l a t e - c o l u m n s :   r e p e a t ( 5 ,   1 f r ) ; 
-         g a p :   2 p x ; 
-         w i d t h :   6 0 p x ; 
-         h e i g h t :   6 0 p x ; 
-         b a c k g r o u n d :   r g b a ( 0 ,   0 ,   0 ,   0 . 4 ) ; 
-         p a d d i n g :   3 p x ; 
-         b o r d e r - r a d i u s :   4 p x ; 
-         b o r d e r :   1 p x   s o l i d   r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 1 ) ; 
- } 
- 
- . m i n i - c e l l   { 
-         b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 1 ) ; 
-         b o r d e r - r a d i u s :   2 p x ; 
-         t r a n s i t i o n :   a l l   0 . 3 s ; 
- } 
- 
- . m i n i - c e l l . a c t i v e   { 
-         b a c k g r o u n d :   # a 8 5 5 f 7 ; 
-         b o x - s h a d o w :   0   0   5 p x   # a 8 5 5 f 7 ; 
- } 
- 
- . m i n i - c e l l . f r e e   { 
-         b a c k g r o u n d :   r g b a ( 2 5 5 ,   2 5 5 ,   2 5 5 ,   0 . 3 ) ; 
- } 
-  
- 
+.mini-cell {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+
+.mini-cell.active {
+    background: #a855f7;
+    box-shadow: 0 0 5px #a855f7;
+}
+
+.mini-cell.free {
+    background: rgba(255, 255, 255, 0.3);
+}

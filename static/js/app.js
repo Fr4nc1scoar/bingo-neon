@@ -895,8 +895,8 @@ function playCountdownBeep(isFinal = false) {
 }
 
 function runGameStartCountdown() {
-    const overlay = document.getElementById("bingo-countdown-overlay");
-    const numEl = document.getElementById("countdown-num");
+    const overlay = document.getElementById("game-countdown-overlay");
+    const numEl = document.getElementById("countdown-number");
     const textEl = document.getElementById("countdown-text");
 
     if (!overlay || !numEl || !textEl) return;
@@ -928,7 +928,7 @@ function runGameStartCountdown() {
         } else if (count === 0) {
             numEl.innerText = "¡SUERTE!";
             // Usar clamp para que no se salga de la pantalla en móviles
-            numEl.style.fontSize = "clamp(3rem, 15vw, 6rem)";
+            numEl.style.fontSize = "clamp(2rem, 12vw, 4.5rem)";
             numEl.style.transform = "scale(1.1)";
             textEl.innerText = "¡QUE COMIENCE EL JUEGO!";
             playCountdownBeep(true);
