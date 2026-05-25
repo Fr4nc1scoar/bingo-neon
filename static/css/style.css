@@ -512,10 +512,10 @@ body {
 }
 
 .catalog-selection {
-    height: 600px; /* MUST be height (not max-height) so flex child can scroll */
+    height: 600px;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* NO overflow:hidden here - it blocks the inner scroll */
 }
 
 .catalog-selection h3 {
@@ -587,11 +587,10 @@ body {
 }
 
 .catalog-cell.sold {
-    background: rgba(255, 255, 255, 0.01);
-    border-color: rgba(255, 255, 255, 0.02);
-    color: rgba(255, 255, 255, 0.15);
+    opacity: 0.35;
     cursor: not-allowed;
     text-decoration: line-through;
+    pointer-events: none;
 }
 
 .catalog-preview {
@@ -1597,18 +1596,25 @@ input:checked + .slider:before {
 .btn-logout:hover { transform: scale(1.15); }
 
 /* ==========================================================================
-   RESPONSIVE - DESKTOP (> 680px): Horizontal header
-   Lowered to 680px so it works inside portfolio iframes too
+   RESPONSIVE - DESKTOP (> 680px): Horizontal single-row header
    ========================================================================== */
 @media (min-width: 680px) {
+    /* On desktop the header-top-row wrapper becomes invisible;
+       logo and badge become flex siblings with the nav */
     .app-header {
         flex-wrap: nowrap;
         align-items: center;
-        gap: 1.25rem;
-        padding: 1rem 0;
+        gap: 1rem;
+        padding: 0.85rem 0;
     }
-    /* On desktop, logo is order 1, nav is order 2 (center), badge is order 3 (right) */
-    .logo { order: 1; flex-shrink: 0; }
+    .header-top-row {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 0.75rem;
+        order: 1;
+        margin-bottom: 0;
+    }
     .nav-menu {
         order: 2;
         width: auto;
@@ -1622,10 +1628,8 @@ input:checked + .slider:before {
     .user-badge {
         order: 3;
         flex-shrink: 0;
-    }
-    /* Hide the header-top-row wrapper on desktop — header is one flat row */
-    .header-top-row {
-        display: contents; /* Makes children act as direct flex children of app-header */
+        /* On desktop, hide the badge that's inside header-top-row;
+           it is re-rendered outside on desktop via JS */
     }
     .username-display { display: inline; }
 }
@@ -1673,8 +1677,8 @@ input:checked + .slider:before {
     }
     .catalog-selection { 
         order: 1; 
-        height: 380px; /* Use height (not max-height) so inner flex child scrolls */
-        max-height: 380px;
+        height: 360px;
+        /* NO overflow:hidden */
     }
     .catalog-preview {
         order: 2;
