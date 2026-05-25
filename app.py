@@ -282,27 +282,15 @@ def get_available_tables(db: sqlite3.Connection = Depends(get_db)):
         
     partida_id = active_partida['id']
     
-    # Buscar tablas ocupadas (reservadas vigentes o pagadas)
+    # Buscar tablas ocupadas (únicamente las que ya están pagadas)
     cursor.execute("""
         SELECT tm.id FROM tablas_maestras tm
         WHERE tm.id NOT IN (
             SELECT tv.tabla_id FROM tickets_venta tv
-            WHERE tv.partida_id = ? AND (tv.estado = 'PAGADO' OR (tv.estado = 'RESERVADO' AND tv.reservado_hasta > datetime('now', '-4 hours')))
+            WHERE tv.partida_id = ? AND tv.estado = 'PAGADO'
         )
         ORDER BY tm.id ASC;
-    """, (partida_id,)) # datetime('now', '-4 hours') se ajusta al huso horario local si es necesario, mejor usamos timestamp puro o string estándar
-    
-    # SQLite datetime('now') usa UTC. Vamos a configurar la reserva usando el formateador estándar de Python en UTC o ISO
-    # Para ser robustos en SQLite, calculamos la fecha límite en Python y la pasamos como string ISO.
-    now_str = datetime.utcnow().isoformat()
-    cursor.execute("""
-        SELECT tm.id FROM tablas_maestras tm
-        WHERE tm.id NOT IN (
-            SELECT tv.tabla_id FROM tickets_venta tv
-            WHERE tv.partida_id = ? AND (tv.estado = 'PAGADO' OR (tv.estado = 'RESERVADO' AND tv.reservado_hasta > ?))
-        )
-        ORDER BY tm.id ASC;
-    """, (partida_id, now_str))
+    """, (partida_id,))
     
     tables = cursor.fetchall()
     return {"tables": [t['id'] for t in tables]}

@@ -218,6 +218,35 @@ body {
     margin-bottom: 2rem;
 }
 
+/* --- REGISTRO DE PERSONAL PREMIUM AESTHETICS --- */
+#form-register .auth-title {
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    filter: drop-shadow(0 2px 8px rgba(244, 63, 94, 0.25));
+}
+
+#form-register .form-group label i {
+    color: #f472b6;
+    text-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+}
+
+#form-register .form-group input:focus {
+    border-color: #f472b6;
+    box-shadow: 0 0 15px rgba(244, 114, 182, 0.3);
+}
+
+#form-register .btn-primary {
+    background: var(--gradient-accent);
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.35);
+}
+
+#form-register .btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5);
+    transform: translateY(-1px);
+}
+
 /* --- ELEMENTOS DE FORMULARIO --- */
 .form-group {
     margin-bottom: 1.5rem;
