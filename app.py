@@ -401,17 +401,12 @@ def reserve_table(data: TableReserve, current_user: Dict[str, Any] = Depends(get
 # --- LÓGICA DE MONITOREO DE PARTIDA EN VIVO (Para Jugadores) ---
 
 @app.get("/api/game/state")
-def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
-    """Retorna el estado completo del juego, bolas extraídas y tickets del usuario actual."""
-    cursor = db.cursor()
-    
-    # 1. Obtener partida activa actual con su patrón personalizado
-    cursor.execute("SELECT id, estado, modalidad, patron_custom FROM partidas ORDER BY id DESC LIMIT 1;")
+def get_game_state_data(partida_id: int, cursor, current_user_id: int = None):
+    cursor.execute("SELECT estado, modalidad, patron_custom FROM partidas WHERE id = ?;", (partida_id,))
     partida = cursor.fetchone()
     if not partida:
-        return {"partida": None}
+        return {"partida_id": None}
         
-    partida_id = partida['id']
     estado_partida = partida['estado']
     modalidad_partida = partida['modalidad']
     patron_custom_raw = partida['patron_custom']
@@ -422,55 +417,45 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
     bolas = [r['bola_extraida'] for r in cursor.fetchall()]
     
     # 3. Obtener tickets comprados/reservados por el usuario
-    now_str = datetime.utcnow().isoformat()
-    cursor.execute("""
-        SELECT id, tabla_id, codigo_reserva, estado, reservado_hasta 
-        FROM tickets_venta 
-        WHERE partida_id = ? AND usuario_id = ? AND (estado = 'PAGADO' OR (estado = 'RESERVADO' AND reservado_hasta > ?));
-    """, (partida_id, current_user['id'], now_str))
-    
-    tickets_rows = cursor.fetchall()
     tickets_usuario = []
-    
-    for t in tickets_rows:
-        # Obtener los 4 cartones de la tabla comprada
+    if current_user_id:
+        now_str = datetime.utcnow().isoformat()
         cursor.execute("""
-            SELECT posicion, b_column, i_column, n_column, g_column, o_column 
-            FROM cartones_maestros 
-            WHERE tabla_id = ? 
-            ORDER BY posicion ASC;
-        """, (t['tabla_id'],))
-        cartones_rows = cursor.fetchall()
-        cartones = []
-        for cr in cartones_rows:
-            cartones.append({
-                "posicion": cr["posicion"],
-                "B": json.loads(cr["b_column"]),
-                "I": json.loads(cr["i_column"]),
-                "N": json.loads(cr["n_column"]),
-                "G": json.loads(cr["g_column"]),
-                "O": json.loads(cr["o_column"])
+            SELECT id, tabla_id, codigo_reserva, estado, reservado_hasta 
+            FROM tickets_venta 
+            WHERE partida_id = ? AND usuario_id = ? AND (estado = 'PAGADO' OR (estado = 'RESERVADO' AND reservado_hasta > ?));
+        """, (partida_id, current_user_id, now_str))
+        
+        tickets_rows = cursor.fetchall()
+        for t in tickets_rows:
+            cursor.execute("SELECT posicion, b_column, i_column, n_column, g_column, o_column FROM cartones_maestros WHERE tabla_id = ? ORDER BY posicion ASC;", (t['tabla_id'],))
+            cartones_rows = cursor.fetchall()
+            cartones = []
+            for cr in cartones_rows:
+                cartones.append({
+                    "posicion": cr["posicion"],
+                    "B": json.loads(cr["b_column"]),
+                    "I": json.loads(cr["i_column"]),
+                    "N": json.loads(cr["n_column"]),
+                    "G": json.loads(cr["g_column"]),
+                    "O": json.loads(cr["o_column"])
+                })
+            tickets_usuario.append({
+                "ticket_id": t['id'],
+                "tabla_id": t['tabla_id'],
+                "codigo_reserva": t['codigo_reserva'],
+                "estado": t['estado'],
+                "reservado_hasta": t['reservado_hasta'],
+                "cartones": cartones
             })
             
-        tickets_usuario.append({
-            "ticket_id": t['id'],
-            "tabla_id": t['tabla_id'],
-            "codigo_reserva": t['codigo_reserva'],
-            "estado": t['estado'],
-            "reservado_hasta": t['reservado_hasta'],
-            "cartones": cartones
-        })
-        
     # 4. Comprobar ganadores de la partida actual
     ganadores = []
-    if len(bolas) >= 4: # Mínimo necesario para hacer línea
-        # Buscar todos los tickets PAGADOS de la partida
+    if len(bolas) >= 4:
         cursor.execute("SELECT tv.id, tv.tabla_id, u.username FROM tickets_venta tv JOIN usuarios u ON tv.usuario_id = u.id WHERE tv.partida_id = ? AND tv.estado = 'PAGADO';", (partida_id,))
         pagados = cursor.fetchall()
         
         bolas_set = set(bolas)
-        
-        # Determinar qué modos evaluar
         evaluar_linea = False
         evaluar_carton = False
         evaluar_custom = False
@@ -483,26 +468,14 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
             evaluar_custom = True
         elif modalidad_partida == 'LINEA_Y_CARTON_LLENO':
             evaluar_carton = True
-            
-            # PROGRESIÓN AUTOMÁTICA DE MODALIDAD:
-            # Comprobamos si en las bolas de turnos anteriores ya hubo algún ganador de LÍNEA.
             ya_hubo_linea = False
             if len(bolas) > 4:
                 prev_bolas_set = set(bolas[:-1])
                 for t_check in pagados:
                     cursor.execute("SELECT b_column, i_column, n_column, g_column, o_column FROM cartones_maestros WHERE tabla_id = ?;", (t_check['tabla_id'],))
                     c_db = cursor.fetchall()
-                    board_check = []
-                    for c in c_db:
-                        board_check.append({
-                            "B": json.loads(c[0]),
-                            "I": json.loads(c[1]),
-                            "N": json.loads(c[2]),
-                            "G": json.loads(c[3]),
-                            "O": json.loads(c[4])
-                        })
-                    win_p, _, _, _ = check_table_win(board_check, prev_bolas_set, 'LINEA')
-                    if win_p:
+                    board_check = [{"B": json.loads(c[0]), "I": json.loads(c[1]), "N": json.loads(c[2]), "G": json.loads(c[3]), "O": json.loads(c[4])} for c in c_db]
+                    if check_table_win(board_check, prev_bolas_set, 'LINEA')[0]:
                         ya_hubo_linea = True
                         break
             if not ya_hubo_linea:
@@ -510,25 +483,14 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
 
         elif modalidad_partida == 'CUSTOM_Y_CARTON_LLENO':
             evaluar_carton = True
-            
-            # PROGRESIÓN AUTOMÁTICA DE CUSTOM:
             ya_hubo_custom = False
             if len(bolas) > 0:
                 prev_bolas_set = set(bolas[:-1])
                 for t_check in pagados:
                     cursor.execute("SELECT b_column, i_column, n_column, g_column, o_column FROM cartones_maestros WHERE tabla_id = ?;", (t_check['tabla_id'],))
                     c_db = cursor.fetchall()
-                    board_check = []
-                    for c in c_db:
-                        board_check.append({
-                            "B": json.loads(c[0]),
-                            "I": json.loads(c[1]),
-                            "N": json.loads(c[2]),
-                            "G": json.loads(c[3]),
-                            "O": json.loads(c[4])
-                        })
-                    win_p, _, _, _ = check_table_win(board_check, prev_bolas_set, 'CUSTOM', custom_pattern_coords)
-                    if win_p:
+                    board_check = [{"B": json.loads(c[0]), "I": json.loads(c[1]), "N": json.loads(c[2]), "G": json.loads(c[3]), "O": json.loads(c[4])} for c in c_db]
+                    if check_table_win(board_check, prev_bolas_set, 'CUSTOM', custom_pattern_coords)[0]:
                         ya_hubo_custom = True
                         break
             if not ya_hubo_custom:
@@ -536,18 +498,8 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
         
         for ticket in pagados:
             cursor.execute("SELECT b_column, i_column, n_column, g_column, o_column FROM cartones_maestros WHERE tabla_id = ?;", (ticket['tabla_id'],))
-            cartones_db = cursor.fetchall()
-            board = []
-            for c in cartones_db:
-                board.append({
-                    "B": json.loads(c[0]),
-                    "I": json.loads(c[1]),
-                    "N": json.loads(c[2]),
-                    "G": json.loads(c[3]),
-                    "O": json.loads(c[4])
-                })
+            board = [{"B": json.loads(c[0]), "I": json.loads(c[1]), "N": json.loads(c[2]), "G": json.loads(c[3]), "O": json.loads(c[4])} for c in cursor.fetchall()]
             
-            # Chequear según los flags activos
             win_line, pos_line, pat_line, cells_line = False, None, None, []
             win_full, pos_full, pat_full, cells_full = False, None, None, []
             win_custom, pos_custom, pat_custom, cells_custom = False, None, None, []
@@ -559,34 +511,12 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
             if evaluar_custom:
                 win_custom, pos_custom, pat_custom, cells_custom = check_table_win(board, bolas_set, 'CUSTOM', custom_pattern_coords)
             
-            # Registrar ganadores (Cartón lleno y Custom tienen prioridad)
             if win_full:
-                ganadores.append({
-                    "ticket_id": ticket['id'],
-                    "tabla_id": ticket['tabla_id'],
-                    "username": ticket['username'],
-                    "carton_posicion": pos_full,
-                    "patron": "Cartón Lleno",
-                    "celdas": cells_full
-                })
+                ganadores.append({"ticket_id": ticket['id'], "tabla_id": ticket['tabla_id'], "username": ticket['username'], "carton_posicion": pos_full, "patron": "Cartón Lleno", "celdas": cells_full})
             elif win_custom:
-                ganadores.append({
-                    "ticket_id": ticket['id'],
-                    "tabla_id": ticket['tabla_id'],
-                    "username": ticket['username'],
-                    "carton_posicion": pos_custom,
-                    "patron": "Patrón Personalizado",
-                    "celdas": cells_custom
-                })
+                ganadores.append({"ticket_id": ticket['id'], "tabla_id": ticket['tabla_id'], "username": ticket['username'], "carton_posicion": pos_custom, "patron": "Patrón Personalizado", "celdas": cells_custom})
             elif win_line:
-                ganadores.append({
-                    "ticket_id": ticket['id'],
-                    "tabla_id": ticket['tabla_id'],
-                    "username": ticket['username'],
-                    "carton_posicion": pos_line,
-                    "patron": pat_line,
-                    "celdas": cells_line
-                })
+                ganadores.append({"ticket_id": ticket['id'], "tabla_id": ticket['tabla_id'], "username": ticket['username'], "carton_posicion": pos_line, "patron": pat_line, "celdas": cells_line})
                 
     return {
         "partida_id": partida_id,
@@ -596,6 +526,18 @@ def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db:
         "tickets": tickets_usuario,
         "ganadores": ganadores
     }
+
+@app.get("/api/game/state")
+def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):
+    """Retorna el estado completo del juego, bolas extraídas y tickets del usuario actual."""
+    cursor = db.cursor()
+    
+    cursor.execute("SELECT id FROM partidas ORDER BY id DESC LIMIT 1;")
+    partida = cursor.fetchone()
+    if not partida:
+        return {"partida": None}
+        
+    return get_game_state_data(partida['id'], cursor, current_user['id'])
 
 # --- ENDPOINTS EXCLUSIVOS DEL ADMINISTRADOR ---
 
@@ -615,14 +557,13 @@ def admin_create_partida(data: PartidaCreate, current_admin: Dict[str, Any] = De
     cursor.execute("INSERT INTO partidas (estado, modalidad, patron_custom) VALUES ('ACTIVA', ?, ?) RETURNING id;", (data.modalidad, patron_str))
     new_partida_id = cursor.fetchone()[0]
     
-    # Si keep_tickets está activo y hubo una partida anterior, copiar los tickets pagados
     if data.keep_tickets and last_partida_id:
-        cursor.execute("""
+        cursor.execute(f"""
             INSERT INTO tickets_venta (partida_id, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta)
-            SELECT ?, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta 
+            SELECT {new_partida_id}, tabla_id, usuario_id, codigo_reserva, estado, reservado_hasta 
             FROM tickets_venta 
             WHERE partida_id = ? AND estado = 'PAGADO';
-        """, (new_partida_id, last_partida_id))
+        """, (last_partida_id,))
         
     db.commit()
     

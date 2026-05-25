@@ -4,6 +4,20 @@
 
 const API_BASE = window.location.origin;
 
+// Fetch Interceptor para manejar tokens expirados de forma global
+const originalFetch = window.fetch;
+window.fetch = async function() {
+    const response = await originalFetch.apply(this, arguments);
+    if (response.status === 401) {
+        // Evitar que salten muchos popups si hay varios requests en paralelo
+        if (state.user !== null) {
+            showToast("Sesión expirada. Por favor, inicia sesión nuevamente.", "error");
+            handleLogout();
+        }
+    }
+    return response;
+};
+
 // --- SISTEMA PREMIUM DE TOASTS GLASSMORPHIC ---
 function showToast(message, type = 'info') {
     const container = document.getElementById("toast-container");
@@ -792,23 +806,59 @@ function closeWinOverlay() {
     document.getElementById("bingo-win-overlay").classList.remove("active");
 }
 
+function playCountdownBeep(isFinal = false) {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (isFinal) {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.6);
+        } else {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.2);
+        }
+    } catch (e) { console.warn("Audio ignorado"); }
+}
+
 function runGameStartCountdown() {
-    const overlay = document.getElementById("game-countdown-overlay");
-    const numEl = document.getElementById("countdown-number");
+    const overlay = document.getElementById("bingo-countdown-overlay");
+    const numEl = document.getElementById("countdown-num");
     const textEl = document.getElementById("countdown-text");
+
     if (!overlay || !numEl || !textEl) return;
 
-    overlay.classList.add("active");
-    
+    overlay.style.display = "flex";
+    setTimeout(() => {
+        overlay.classList.add("active");
+    }, 10);
+
     let count = 5;
     numEl.innerText = count;
-    textEl.innerText = "¡PREPÁRATE!";
+    textEl.innerText = "PREPARANDO TABLAS...";
 
     const triggerPop = () => {
-        numEl.style.transform = "scale(1.4)";
-        setTimeout(() => { numEl.style.transform = "scale(1)"; }, 150);
+        numEl.style.transform = "scale(1.2)";
+        playCountdownBeep(false);
+        setTimeout(() => {
+            numEl.style.transform = "scale(1)";
+        }, 150);
     };
-    
+
     triggerPop();
 
     const interval = setInterval(() => {
@@ -818,9 +868,11 @@ function runGameStartCountdown() {
             triggerPop();
         } else if (count === 0) {
             numEl.innerText = "¡SUERTE!";
-            numEl.style.fontSize = "5.5rem";
-            numEl.style.transform = "scale(1.4)";
+            // Usar clamp para que no se salga de la pantalla en móviles
+            numEl.style.fontSize = "clamp(3rem, 15vw, 6rem)";
+            numEl.style.transform = "scale(1.1)";
             textEl.innerText = "¡QUE COMIENCE EL JUEGO!";
+            playCountdownBeep(true);
         } else {
             clearInterval(interval);
             overlay.style.opacity = "0";
