@@ -713,46 +713,86 @@ async function fetchGameState() {
 
         // 5. Monitorear si hay ganadores y desplegar el Popup WOW
         if (data.ganadores && data.ganadores.length > 0) {
-            const firstWinner = data.ganadores[0];
-            const winnerKey = `${firstWinner.ticket_id}_${firstWinner.patron}`;
-            
-            if (!state.announcedWinners.has(winnerKey)) {
-                state.announcedWinners.add(winnerKey);
-                
-                // Mostrar overlay
+            // Agrupar ganadores que aún no han sido anunciados en esta sesión de juego
+            const newWinners = data.ganadores.filter(w => {
+                const key = `${w.ticket_id}_${w.patron}`;
+                return !state.announcedWinners.has(key);
+            });
+
+            if (newWinners.length > 0) {
+                // Registrar a todos como anunciados para evitar molestos popups duplicados
+                newWinners.forEach(w => {
+                    state.announcedWinners.add(`${w.ticket_id}_${w.patron}`);
+                });
+
                 const overlay = document.getElementById("bingo-win-overlay");
+                const titleEl = document.getElementById("win-overlay-title");
                 const details = document.getElementById("win-overlay-details");
-                
-                details.innerHTML = `
-                    <p style="font-size:1.2rem; margin-bottom:1rem;">
-                        ¡El jugador <strong>${firstWinner.username}</strong> ha cantado BINGO!
-                    </p>
-                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); padding:1rem; border-radius:8px;">
-                        <div>Tabla de la Suerte: <strong>#${firstWinner.tabla_id}</strong></div>
-                        <div>Patrón Completado: <strong>${firstWinner.patron}</strong></div>
-                        <div style="font-size:0.9rem; color:#9ca3af; margin-top:0.5rem;">
-                            Cartón #${firstWinner.carton_posicion} de su set.
-                        </div>
-                    </div>
-                `;
-                overlay.classList.add("active");
-                
-                // Resaltar celdas ganadoras en el cartón si es del usuario (cualquiera de sus tablas)
-                const ownedActiveTicket = pagados.find(t => t.tabla_id === firstWinner.tabla_id);
-                if (ownedActiveTicket) {
-                    if (state.activeGameTableId !== firstWinner.tabla_id) {
-                        selectActiveGameTable(firstWinner.tabla_id);
+                const footerEl = document.getElementById("win-overlay-footer");
+
+                if (overlay && titleEl && details && footerEl) {
+                    // Determinar el título y el footer según la modalidad y los patrones ganados
+                    const hasFullCarton = newWinners.some(w => w.patron === "Cartón Lleno");
+                    const hasCustom = newWinners.some(w => w.patron === "Patrón Personalizado");
+                    const gameMod = data.modalidad; 
+
+                    if (hasFullCarton) {
+                        titleEl.innerHTML = "¡BINGO DE CARTÓN LLENO!";
+                        footerEl.innerText = "¡Partida finalizada! Gracias por participar.";
+                    } else if (hasCustom) {
+                        titleEl.innerHTML = "¡BINGO DE PATRÓN LIBRE!";
+                        if (gameMod === 'CUSTOM_Y_CARTON_LLENO') {
+                            footerEl.innerText = "¡La partida continúa! Ahora jugamos por el Cartón Lleno.";
+                        } else {
+                            footerEl.innerText = "¡Partida finalizada! Gracias por participar.";
+                        }
+                    } else {
+                        // Ganó Línea
+                        titleEl.innerHTML = "¡TENEMOS GANADOR DE LÍNEA!";
+                        if (gameMod === 'LINEA_Y_CARTON_LLENO') {
+                            footerEl.innerText = "¡La partida continúa! Ahora jugamos por el Cartón Lleno.";
+                        } else {
+                            footerEl.innerText = "¡Partida finalizada! Gracias por participar.";
+                        }
                     }
-                    // Animación de victoria en sus celdas
-                    setTimeout(() => {
-                        firstWinner.celdas.forEach(cell => {
-                            const [r, c] = cell;
-                            const element = document.getElementById(`cell-${ownedActiveTicket.ticket_id}_${firstWinner.carton_posicion}_${r}_${c}`);
-                            if (element) {
-                                element.classList.add("winning-cell");
+
+                    // Generar HTML premium para mostrar todos los ganadores de este turno (Bingo Múltiple)
+                    let winnersHTML = '';
+                    newWinners.forEach(w => {
+                        winnersHTML += `
+                            <div class="winner-row" style="background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; text-align: left;">
+                                <div style="font-size: 1.15rem; font-weight: 700; color: #f472b6; margin-bottom: 0.25rem; display:flex; align-items:center; gap:0.5rem;">
+                                    <i class="fa-solid fa-user-astronaut" style="color:#fbbf24;"></i> ${w.username}
+                                </div>
+                                <div style="font-size: 0.95rem; color: #e5e7eb;">
+                                    Tabla de la Suerte: <span style="font-weight: 800; color:#38bdf8;">#${w.tabla_id}</span>
+                                </div>
+                                <div style="font-size: 0.9rem; color: #9ca3af; margin-top: 0.25rem;">
+                                    Completó: <strong style="color: #4ade80;">${w.patron}</strong> (Cartón #${w.carton_posicion})
+                                </div>
+                            </div>
+                        `;
+
+                        // Resaltar celdas ganadoras en el cartón si es de nuestras tablas pagadas
+                        const ownedActiveTicket = pagados.find(t => t.tabla_id === w.tabla_id);
+                        if (ownedActiveTicket) {
+                            if (state.activeGameTableId !== w.tabla_id) {
+                                selectActiveGameTable(w.tabla_id);
                             }
-                        });
-                    }, 500);
+                            setTimeout(() => {
+                                w.celdas.forEach(cell => {
+                                    const [r, c] = cell;
+                                    const element = document.getElementById(`cell-${ownedActiveTicket.ticket_id}_${w.carton_posicion}_${r}_${c}`);
+                                    if (element) {
+                                        element.classList.add("winning-cell");
+                                    }
+                                });
+                            }, 500);
+                        }
+                    });
+
+                    details.innerHTML = winnersHTML;
+                    overlay.classList.add("active");
                 }
             }
         }
@@ -808,6 +848,50 @@ function checkCurrentBingoManual() {
 
 function closeWinOverlay() {
     document.getElementById("bingo-win-overlay").classList.remove("active");
+}
+
+function runGameStartCountdown() {
+    const overlay = document.getElementById("game-countdown-overlay");
+    const numEl = document.getElementById("countdown-number");
+    const textEl = document.getElementById("countdown-text");
+    if (!overlay || !numEl || !textEl) return;
+
+    overlay.classList.add("active");
+    
+    let count = 5;
+    numEl.innerText = count;
+    textEl.innerText = "¡PREPÁRATE!";
+
+    const triggerPop = () => {
+        numEl.style.transform = "scale(1.4)";
+        setTimeout(() => { numEl.style.transform = "scale(1)"; }, 150);
+    };
+    
+    triggerPop();
+
+    const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            numEl.innerText = count;
+            triggerPop();
+        } else if (count === 0) {
+            numEl.innerText = "¡SUERTE!";
+            numEl.style.fontSize = "5.5rem";
+            numEl.style.transform = "scale(1.4)";
+            textEl.innerText = "¡QUE COMIENCE EL JUEGO!";
+        } else {
+            clearInterval(interval);
+            overlay.style.opacity = "0";
+            overlay.style.transition = "opacity 450ms ease";
+            setTimeout(() => {
+                overlay.classList.remove("active");
+                overlay.style.opacity = "";
+                overlay.style.transition = "";
+                numEl.style.fontSize = "";
+                numEl.style.transform = "";
+            }, 450);
+        }
+    }, 1000);
 }
 
 function renderHallNumbers(drawnList) {
@@ -937,12 +1021,28 @@ async function fetchAdminState() {
             const winnersLog = document.getElementById("admin-winners-log");
             if (winnersLog) {
                 if (stateData.ganadores && stateData.ganadores.length > 0) {
-                    winnersLog.innerHTML = stateData.ganadores.map(g => `
-                        <li style="border-left: 3px solid #10b981; padding-left: 0.5rem; background: rgba(16,185,129,0.05); padding: 0.25rem 0.5rem; border-radius: 4px;">
-                            <span style="color:#34d399; font-weight:700;">¡BINGO!</span> 
-                            <strong>${g.username}</strong> con Tabla <strong>#${g.tabla_id}</strong> (Cartón #${g.carton_posicion}) - <em>${g.patron}</em>
-                        </li>
-                    `).join('');
+                    winnersLog.innerHTML = stateData.ganadores.map(g => {
+                        const isLined = g.patron !== "Cartón Lleno" && g.patron !== "Patrón Personalizado";
+                        const themeColor = isLined ? "#10b981" : "#f59e0b"; // Green for line, golden for full/custom
+                        const themeBg = isLined ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)";
+                        const themeBorder = isLined ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.4)";
+                        const trophyIcon = isLined ? "fa-award" : "fa-trophy";
+                        
+                        return `
+                            <li style="border: 1px solid ${themeBorder}; border-left: 5px solid ${themeColor}; background: ${themeBg}; padding: 0.6rem 0.85rem; border-radius: 10px; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 0.5rem;">
+                                <div style="font-size: 1.4rem; color: ${themeColor}; filter: drop-shadow(0 0 5px ${themeColor}); display: flex; align-items: center; justify-content: center;"><i class="fa-solid ${trophyIcon}"></i></div>
+                                <div style="flex-grow: 1;">
+                                    <div style="font-weight: 700; color: #fff; font-size: 0.9rem;">${g.username}</div>
+                                    <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.1rem;">
+                                        Tabla <span style="color: ${themeColor}; font-weight: 800;">#${g.tabla_id}</span> (Cartón #${g.carton_posicion})
+                                    </div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: ${themeColor}; letter-spacing: 0.5px;">
+                                    ${g.patron}
+                                </div>
+                            </li>
+                        `;
+                    }).join('');
                 } else {
                     winnersLog.innerHTML = `<li style="color:#9ca3af; text-align:center; padding:0.5rem 0;">No hay ganadores registrados aún.</li>`;
                 }
@@ -1136,10 +1236,11 @@ async function adminDrawBall() {
         if (!res.ok) throw new Error(data.detail || "Error al extraer bola.");
         
         // Notificación flotante elegante auto-cerrable con el número extraído
-        showToast(`Balota Extraída: ${getBingoLetter(data.bola)} - ${data.bola} (Bola #${data.orden_extraccion})`, "success");
+        showToast(`Bolita Extraída: ${getBingoLetter(data.bola)} - ${data.bola} (Bola #${data.orden})`, "success");
         
         if (data.ganadores && data.ganadores.length > 0) {
-            showToast(`¡¡¡TENEMOS GANADOR!!! El jugador ${data.ganadores[0].username} cantó BINGO con la Tabla #${data.ganadores[0].tabla_id}!`, "warning");
+            const winnersListStr = data.ganadores.map(g => `${g.username} (#${g.tabla_id})`).join(', ');
+            showToast(`¡¡¡TENEMOS GANADOR!!! ${winnersListStr} cantó BINGO!`, "warning");
         }
         
         fetchAdminState();

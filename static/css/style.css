@@ -1863,3 +1863,150 @@ input:checked + .slider:before {
     .bingo-win-modal { width: 95%; padding: 1.5rem; }
     .win-title { font-size: 1.8rem; }
 }
+
+/* ==========================================================================
+   SYSTEM PREMIUM OVERLAYS (FULLSCREEN COUNTDOWN AND WINNER NOTIFICATION)
+   ========================================================================== */
+.fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(6, 6, 14, 0.92);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.4s ease, visibility 0.4s;
+    visibility: hidden;
+}
+
+.fullscreen-overlay.active {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Winner Card Styles */
+.win-card {
+    position: relative;
+    max-width: 500px;
+    width: 90%;
+    padding: 3rem 2rem;
+    border-radius: 24px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(20, 20, 35, 0.6), rgba(10, 10, 20, 0.8));
+    border: 2px solid rgba(245, 158, 11, 0.4); /* Neon gold borders */
+    box-shadow: 0 0 40px rgba(245, 158, 11, 0.25), inset 0 0 20px rgba(255, 255, 255, 0.05);
+    animation: winCardSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    overflow: hidden;
+}
+
+.win-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+    animation: rotateGlow 15s linear infinite;
+}
+
+.win-trophy-icon {
+    font-size: 4.5rem;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.6));
+    margin-bottom: 1.5rem;
+    animation: trophyFloat 2.5s ease-in-out infinite;
+}
+
+.win-card h2 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #fff, #d1d5db);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+#win-overlay-details {
+    margin: 1.5rem 0;
+    font-size: 1.15rem;
+    color: #e5e7eb;
+    line-height: 1.6;
+}
+
+.win-overlay-footer-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #a855f7; /* Modality color */
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
+    margin-top: 1rem;
+    letter-spacing: 0.5px;
+}
+
+/* Countdown Styles */
+.countdown-card {
+    text-align: center;
+    animation: countdownPulse 1s infinite alternate;
+}
+
+.countdown-number-anim {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 10rem;
+    line-height: 1;
+    background: linear-gradient(135deg, #f472b6, #ec4899, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px rgba(236, 72, 153, 0.6));
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#countdown-text {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-top: 1.5rem;
+}
+
+/* Keyframes */
+@keyframes winCardSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes trophyFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes rotateGlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes countdownPulse {
+    from { transform: scale(0.95); }
+    to { transform: scale(1.05); }
+}
+

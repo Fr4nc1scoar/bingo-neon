@@ -265,7 +265,26 @@
         </main>
     </div>
 
+    <!-- OVERLAYS PREMIUM DE PARTIDA Y GANADORES -->
+    <div id="bingo-win-overlay" class="fullscreen-overlay">
+        <div class="win-card glass-card">
+            <div class="win-glow"></div>
+            <i class="fa-solid fa-trophy win-trophy-icon"></i>
+            <h2 id="win-overlay-title">¡TENEMOS GANADOR!</h2>
+            <div id="win-overlay-details"></div>
+            <p id="win-overlay-footer" class="win-overlay-footer-text"></p>
+            <button class="btn btn-accent mt-4" style="min-width: 140px;" onclick="closeWinOverlay()">¡Excelente!</button>
+        </div>
+    </div>
+
+    <div id="game-countdown-overlay" class="fullscreen-overlay">
+        <div class="countdown-card">
+            <div id="countdown-number" class="countdown-number-anim">-</div>
+            <div id="countdown-text">Comenzando Partida</div>
+        </div>
+    </div>
+
     <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:100000; display:flex; flex-direction:column; gap:10px; pointer-events:none; max-width:360px; width:90%;"></div>
-    <script src="js/app.js?v=10"></script>
+    <script src="js/app.js?v=11"></script>
 </body>
 </html>
