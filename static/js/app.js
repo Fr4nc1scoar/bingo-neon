@@ -744,8 +744,9 @@ async function fetchGameState() {
                                 const l = letters[c];
                                 if (carton[l][r] === b) {
                                     // Filtro estricto para "Modalidad Sola"
-                                    if (data.modalidad === 'CUSTOM' && data.patron_custom) {
-                                        if (data.patron_custom[r] && data.patron_custom[r][c] === 1) {
+                                    if (data.modalidad === 'CUSTOM' && data.patron_custom && Array.isArray(data.patron_custom)) {
+                                        const isInPattern = data.patron_custom.some(coord => coord[0] === r && coord[1] === c);
+                                        if (isInPattern) {
                                             state.daubedCells[`${ticket.ticket_id}_${carton.posicion}_${r}_${c}`] = true;
                                         }
                                     } else {
@@ -913,17 +914,39 @@ function playNewBallBeep() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (AudioContext) {
             const ctx = new AudioContext();
+            
+            // Sonido percusivo de "bolita cayendo" (clack)
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+            
+            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+            
             osc.connect(gain);
             gain.connect(ctx.destination);
+            
             osc.start();
-            osc.stop(ctx.currentTime + 0.1);
+            osc.stop(ctx.currentTime + 0.05);
+            
+            // Segundo impacto o "rebote"
+            setTimeout(() => {
+                if(ctx.state !== 'running') return;
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(500, ctx.currentTime);
+                osc2.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.03);
+                gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.03);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start();
+                osc2.stop(ctx.currentTime + 0.03);
+            }, 60);
         }
     } catch (e) { console.warn("Audio balota ignorado"); }
 }
