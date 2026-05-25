@@ -512,12 +512,14 @@ async function reserveSelectedTable(id) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "No se pudo realizar la reserva.");
         
-        alert(`¡Reserva realizada con éxito!\nHas reservado la Tabla #${data.tabla_id}.\nPor favor, indícale al Administrador tu número de Tabla (#${data.tabla_id}) para registrar y validar tu pago.`);
+        showToast(`¡Reserva realizada con éxito!\nHas reservado la Tabla #${data.tabla_id}.\nPor favor, indícale al Administrador tu número de Tabla para validar tu pago.`, "success");
         
         state.selectedTableId = null;
         showScreen("screen-lobby");
     } catch (err) {
-        alert(err.message);
+        if (err.message && !err.message.includes("Sesión expirada")) {
+            showToast(err.message, "error");
+        }
     }
 }
 
@@ -796,9 +798,9 @@ function toggleAutoDaub() {
 function checkCurrentBingoManual() {
     // Si el backend es quien valida, gritar BINGO simplemente actualiza y revisa en backend
     if (state.gameState && state.gameState.ganadores && state.gameState.ganadores.length > 0) {
-        alert("¡Hay un BINGO activo! Revisa la pantalla.");
+        showToast("¡Hay un BINGO activo! Revisa la pantalla.", "warning");
     } else {
-        alert("El motor de premios no reporta ningún patrón completado aún en tus cartones. ¡Sigue atento al bolillero!");
+        showToast("El motor de premios no reporta ningún patrón completado aún en tus cartones. ¡Sigue atento al bolillero!", "info");
     }
 }
 
