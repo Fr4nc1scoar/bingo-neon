@@ -680,12 +680,13 @@ async function fetchGameState() {
         // 1.5. Determinar Objetivo Actual y renderizar visualización
         let currentObjective = "Cargando...";
         let hasLineWinner = data.ganadores && data.ganadores.some(w => w.patron !== "Cartón Lleno" && w.patron !== "Patrón Personalizado");
+        let hasFullWinner = data.ganadores && data.ganadores.some(w => w.patron === "Cartón Lleno");
+        let hasCustomWinner = data.ganadores && data.ganadores.some(w => w.patron === "Patrón Personalizado");
         
         if (data.modalidad === 'LINEA_Y_CARTON_LLENO') {
-            currentObjective = hasLineWinner ? 'CARTÓN LLENO' : 'CUALQUIER LÍNEA';
+            currentObjective = (hasLineWinner || hasFullWinner) ? 'CARTÓN LLENO' : 'CUALQUIER LÍNEA';
         } else if (data.modalidad === 'CUSTOM_Y_CARTON_LLENO') {
-            let hasCustomWinner = data.ganadores && data.ganadores.some(w => w.patron === "Patrón Personalizado");
-            currentObjective = hasCustomWinner ? 'CARTÓN LLENO' : 'PATRÓN PERSONALIZADO';
+            currentObjective = (hasCustomWinner || hasFullWinner) ? 'CARTÓN LLENO' : 'PATRÓN PERSONALIZADO';
         } else if (data.modalidad === 'CARTON_LLENO') {
             currentObjective = 'CARTÓN LLENO';
         } else if (data.modalidad === 'LINEA') {

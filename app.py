@@ -236,6 +236,11 @@ def register(data: UserRegister, db: sqlite3.Connection = Depends(get_db)):
     
     cursor = db.cursor()
     try:
+        # Check if username already exists case-insensitively
+        cursor.execute("SELECT id FROM usuarios WHERE LOWER(username) = LOWER(?)", (username_clean,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado.")
+            
         cursor.execute(
             "INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?);",
             (username_clean, p_hash, rol_forced)
@@ -378,8 +383,8 @@ def reserve_table(data: TableReserve, current_user: Dict[str, Any] = Depends(get
     if occupied > 0:
         raise HTTPException(status_code=400, detail="Esta tabla ya se encuentra reservada o comprada para esta partida.")
         
-    # 3. Crear la reserva por 5 minutos
-    reserva_hasta = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+    # 3. Crear la reserva por 2 horas (aumentado para evitar pérdida)
+    reserva_hasta = (datetime.utcnow() + timedelta(hours=2)).isoformat()
     codigo_reserva = hashlib.md5(f"{partida_id}-{tabla_id}-{current_user['id']}-{random.random()}".encode()).hexdigest()[:8].upper()
     
     cursor.execute("""

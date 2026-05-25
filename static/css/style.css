@@ -1855,7 +1855,7 @@ input:checked + .slider:before {
         margin-top: 0.5rem;
     }
     .grid-4-cartones {
-        grid-template-columns: 1fr 1fr !important; /* 2x2 grid on mobile */
+        grid-template-columns: 1fr !important; /* 1 col on mobile */
         gap: 0.5rem;
         overflow-x: hidden;
         width: 100%;
@@ -1903,11 +1903,11 @@ input:checked + .slider:before {
 
     /* On very small phones, cartones still 2x2 but even tighter */
     .board-preview-container {
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr !important;
         gap: 0.35rem;
     }
     .grid-4-cartones {
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr !important;
         gap: 0.35rem;
     }
     .carton-wrapper { padding: 0.35rem; }
@@ -2104,3 +2104,6 @@ input:checked + .slider:before {
 .mini-cell.free {
     background: rgba(255, 255, 255, 0.3);
 }
+
+
+
