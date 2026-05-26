@@ -915,40 +915,24 @@ function initAudio() {
     } catch(e) { console.warn("Audio init failed"); }
 }
 
-let ambientInterval = null;
+let ambientAudio = null;
 
 function startAmbientMusic() {
-    initAudio();
-    if (!globalAudioCtx || ambientInterval) return;
+    if (!ambientAudio) {
+        ambientAudio = new Audio(`${API_BASE}/static/assets/audio/casino_bg.mp3`);
+        ambientAudio.loop = true;
+        ambientAudio.volume = 0.2; // Volumen bajo acogedor
+    }
     
-    // Rhythmic, welcoming arpeggio (C major pentatonic)
-    const notes = [261.63, 329.63, 392.00, 523.25]; 
-    let noteIdx = 0;
-    
-    ambientInterval = setInterval(() => {
-        if(globalAudioCtx.state !== 'running') return;
-        const osc = globalAudioCtx.createOscillator();
-        const gain = globalAudioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = notes[noteIdx];
-        
-        gain.gain.setValueAtTime(0, globalAudioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.06, globalAudioCtx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + 0.4);
-        
-        osc.connect(gain);
-        gain.connect(globalAudioCtx.destination);
-        osc.start(globalAudioCtx.currentTime);
-        osc.stop(globalAudioCtx.currentTime + 0.4);
-        
-        noteIdx = (noteIdx + 1) % notes.length;
-    }, 250); // 120 BPM 8th notes
+    ambientAudio.play().catch(err => {
+        console.warn("Navegador bloqueó el autoplay del audio ambiental", err);
+    });
 }
 
 function stopAmbientMusic() {
-    if (ambientInterval) {
-        clearInterval(ambientInterval);
-        ambientInterval = null;
+    if (ambientAudio) {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
     }
 }
 
@@ -959,34 +943,46 @@ function playWinSound() {
     const ctx = globalAudioCtx;
     const now = ctx.currentTime;
     
-    // Triunfal Fanfare (Super Mario style)
-    const freqs = [
-        {f: 523.25, t: 0, d: 0.15},   // C5
-        {f: 659.25, t: 0.15, d: 0.15},// E5
-        {f: 783.99, t: 0.30, d: 0.15},// G5
-        {f: 1046.50, t: 0.45, d: 0.5} // C6 (long)
+    // Epic Casino Victory Fanfare
+    const chords = [
+        { freqs: [523.25, 659.25, 783.99], t: 0, d: 0.15 },       // C major
+        { freqs: [587.33, 698.46, 880.00], t: 0.15, d: 0.15 },    // D minor
+        { freqs: [659.25, 783.99, 987.77], t: 0.30, d: 0.15 },    // E minor
+        { freqs: [698.46, 880.00, 1046.50], t: 0.45, d: 0.15 },   // F major
+        { freqs: [783.99, 987.77, 1174.66], t: 0.60, d: 0.15 },   // G major
+        { freqs: [1046.50, 1318.51, 1567.98], t: 0.75, d: 0.8 }   // High C major (long)
     ];
     
-    freqs.forEach(note => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = 'square'; // chiptune style
-        osc.frequency.value = note.f;
-        
-        gain.gain.setValueAtTime(0, now + note.t);
-        gain.gain.linearRampToValueAtTime(0.12, now + note.t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + note.t + note.d);
-        
-        if(note.d > 0.2) {
-             osc.frequency.exponentialRampToValueAtTime(note.f * 1.05, now + note.t + note.d);
-        }
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start(now + note.t);
-        osc.stop(now + note.t + note.d);
+    chords.forEach(chord => {
+        chord.freqs.forEach(freq => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0, now + chord.t);
+            gain.gain.linearRampToValueAtTime(0.08, now + chord.t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + chord.t + chord.d);
+            
+            if(chord.d > 0.5) {
+                // Vibrato for the final chord
+                const vibrato = ctx.createOscillator();
+                const vibratoGain = ctx.createGain();
+                vibrato.frequency.value = 6; // 6Hz
+                vibratoGain.gain.value = 10;
+                vibrato.connect(vibratoGain);
+                vibratoGain.connect(osc.frequency);
+                vibrato.start(now + chord.t);
+                vibrato.stop(now + chord.t + chord.d);
+            }
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(now + chord.t);
+            osc.stop(now + chord.t + chord.d);
+        });
     });
 }
 
