@@ -120,9 +120,9 @@ function showScreen(screenId) {
     } else if (screenId === 'screen-game') {
         state.announcedWinners.clear();
         fetchGameState();
-        // Polling de alta frecuencia para juego en vivo (cada 1.5s)
+        // Polling de alta frecuencia para juego en vivo (cada 2.5s)
         if (!state.pollerInterval) {
-            state.pollerInterval = setInterval(fetchGameState, 1500);
+            state.pollerInterval = setInterval(fetchGameState, 2500);
         }
     } else if (screenId === 'screen-admin') {
         fetchAdminSales();
