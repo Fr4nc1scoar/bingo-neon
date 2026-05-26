@@ -95,9 +95,12 @@ function initAppRouting() {
 
 function showScreen(screenId) {
     // Apagar poller de juego si salimos del cuarto de juego
-    if (screenId !== 'screen-game' && state.pollerInterval) {
-        clearInterval(state.pollerInterval);
-        state.pollerInterval = null;
+    if (screenId !== 'screen-game') {
+        if (state.pollerInterval) {
+            clearInterval(state.pollerInterval);
+            state.pollerInterval = null;
+        }
+        stopAmbientMusic();
     }
     
     // Apagar poller de admin si salimos de admin
@@ -120,11 +123,13 @@ function showScreen(screenId) {
         renderCatalogNumbers();
     } else if (screenId === 'screen-game') {
         state.announcedWinners.clear();
+        state.currentGameVersion = -1; // Reset version cache on enter
         fetchGameState();
         // Polling de alta frecuencia para juego en vivo (cada 2.5s)
         if (!state.pollerInterval) {
             state.pollerInterval = setInterval(fetchGameState, 2500);
         }
+        startAmbientMusic();
     } else if (screenId === 'screen-admin') {
         fetchAdminSales();
         fetchAdminAllTickets();
@@ -832,8 +837,8 @@ async function fetchGameState() {
                 newWinners.forEach(w => {
                     state.announcedWinners.add(`${w.ticket_id}_${w.patron}`);
                 });
-
-                triggerPremiumWinnerOverlay(newWinners, data.modalidad, pagados);
+                const winningBall = data.bolas_extraidas && data.bolas_extraidas.length > 0 ? data.bolas_extraidas[data.bolas_extraidas.length - 1] : null;
+                triggerPremiumWinnerOverlay(newWinners, data.modalidad, pagados, winningBall);
             }
         }
     } catch (err) {
@@ -890,11 +895,99 @@ function closeWinOverlay() {
     document.getElementById("bingo-win-overlay").classList.remove("active");
 }
 
+// --- AUDIO SYSTEM ---
+let globalAudioCtx = null;
+let ambientOsc1 = null;
+let ambientOsc2 = null;
+let ambientGain = null;
+
+function initAudio() {
+    try {
+        if (!globalAudioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                globalAudioCtx = new AudioContext();
+            }
+        }
+        if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+            globalAudioCtx.resume();
+        }
+    } catch(e) { console.warn("Audio init failed"); }
+}
+
+function startAmbientMusic() {
+    initAudio();
+    if (!globalAudioCtx || ambientOsc1) return;
+    
+    ambientGain = globalAudioCtx.createGain();
+    ambientGain.gain.value = 0.03; // Very low background volume
+    ambientGain.connect(globalAudioCtx.destination);
+    
+    ambientOsc1 = globalAudioCtx.createOscillator();
+    ambientOsc1.type = 'sine';
+    ambientOsc1.frequency.value = 110; // A2
+    ambientOsc1.connect(ambientGain);
+    
+    ambientOsc2 = globalAudioCtx.createOscillator();
+    ambientOsc2.type = 'triangle';
+    ambientOsc2.frequency.value = 164.81; // E3
+    ambientOsc2.connect(ambientGain);
+    
+    ambientOsc1.start();
+    ambientOsc2.start();
+}
+
+function stopAmbientMusic() {
+    if (ambientOsc1) {
+        ambientOsc1.stop();
+        ambientOsc1.disconnect();
+        ambientOsc1 = null;
+    }
+    if (ambientOsc2) {
+        ambientOsc2.stop();
+        ambientOsc2.disconnect();
+        ambientOsc2 = null;
+    }
+    if (ambientGain) {
+        ambientGain.disconnect();
+        ambientGain = null;
+    }
+}
+
+function playWinSound() {
+    initAudio();
+    if (!globalAudioCtx) return;
+    
+    const ctx = globalAudioCtx;
+    const now = ctx.currentTime;
+    
+    // Arpegio triunfal (A mayor)
+    const freqs = [440, 554.37, 659.25, 880, 1108.73];
+    
+    freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        
+        gain.gain.setValueAtTime(0, now + i * 0.1);
+        gain.gain.linearRampToValueAtTime(0.2, now + i * 0.1 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.6);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now + i * 0.1);
+        osc.stop(now + i * 0.1 + 0.6);
+    });
+}
+
 function playCountdownBeep(isFinal = false) {
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
+        initAudio();
+        if (!globalAudioCtx) return;
+        const ctx = globalAudioCtx;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
@@ -921,43 +1014,42 @@ function playCountdownBeep(isFinal = false) {
 
 function playNewBallBeep() {
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-            const ctx = new AudioContext();
-            
-            // Sonido percusivo de "bolita cayendo" (clack)
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(800, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
-            
-            gain.gain.setValueAtTime(0.4, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            osc.start();
-            osc.stop(ctx.currentTime + 0.05);
-            
-            // Segundo impacto o "rebote"
-            setTimeout(() => {
-                if(ctx.state !== 'running') return;
-                const osc2 = ctx.createOscillator();
-                const gain2 = ctx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(500, ctx.currentTime);
-                osc2.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.03);
-                gain2.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.03);
-                osc2.connect(gain2);
-                gain2.connect(ctx.destination);
-                osc2.start();
-                osc2.stop(ctx.currentTime + 0.03);
-            }, 60);
-        }
+        initAudio();
+        if (!globalAudioCtx) return;
+        const ctx = globalAudioCtx;
+        
+        // Sonido de bolita con ligero eco/cuerpo plástico
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(900, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
+        
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+        
+        // Segundo impacto (rebote)
+        setTimeout(() => {
+            if(ctx.state !== 'running') return;
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(400, ctx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.04);
+            gain2.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start();
+            osc2.stop(ctx.currentTime + 0.04);
+        }, 70);
     } catch (e) { console.warn("Audio balota ignorado"); }
 }
 
@@ -1014,13 +1106,16 @@ function runGameStartCountdown() {
     }, 1000);
 }
 
-function triggerPremiumWinnerOverlay(newWinners, gameMod, pagados = []) {
+function triggerPremiumWinnerOverlay(newWinners, gameMod, pagados = [], winningBall = null) {
     const overlay = document.getElementById("bingo-win-overlay");
     const titleEl = document.getElementById("win-overlay-title");
     const details = document.getElementById("win-overlay-details");
     const footerEl = document.getElementById("win-overlay-footer");
 
     if (!overlay || !titleEl || !details || !footerEl) return;
+    
+    // Play celebratory sound
+    playWinSound();
 
     const hasFullCarton = newWinners.some(w => w.patron === "Cartón Lleno");
     const hasCustom = newWinners.some(w => w.patron === "Patrón Personalizado");
@@ -1045,6 +1140,15 @@ function triggerPremiumWinnerOverlay(newWinners, gameMod, pagados = []) {
     }
 
     let winnersHTML = '';
+    
+    if (winningBall !== null && winningBall !== undefined) {
+        winnersHTML += `
+            <div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); color: #fef08a; padding: 0.75rem; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 1rem; font-size: 1.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                🎯 BINGO CANTADO CON LA BOLITA: <span style="font-size: 1.5rem; color: #fbbf24; margin-left: 0.5rem;">${winningBall}</span>
+            </div>
+        `;
+    }
+    
     newWinners.forEach(w => {
         winnersHTML += `
             <div class="winner-row" style="background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; text-align: left;">
@@ -1206,7 +1310,8 @@ async function fetchAdminState() {
 
             if (newWinners.length > 0) {
                 newWinners.forEach(w => state.announcedWinners.add(`${w.ticket_id}_${w.patron}`));
-                triggerPremiumWinnerOverlay(newWinners, stateData.modalidad);
+                const winningBall = stateData.bolas_extraidas && stateData.bolas_extraidas.length > 0 ? stateData.bolas_extraidas[stateData.bolas_extraidas.length - 1] : null;
+                triggerPremiumWinnerOverlay(newWinners, stateData.modalidad, [], winningBall);
             }
         }
         
