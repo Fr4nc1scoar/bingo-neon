@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, HTTPException, Depends, Header, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -20,7 +21,8 @@ from core.validator import check_table_win
 # Inicializar FastAPI
 app = FastAPI(title="Bingo Digital Premium API", version="1.0.0")
 
-# Habilitar CORS
+# Habilitar CORS y Compresión GZIP
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -558,6 +560,14 @@ def get_game_state_data(partida_id: int, cursor, current_user_id: int = None):
         "tickets": tickets_usuario,
         "ganadores": ganadores
     }
+
+@app.get("/api/game/version")
+def get_game_version(db: sqlite3.Connection = Depends(get_db)):
+    """Retorna una versión super ligera del estado actual (basado en cuentas de la BD) para polling adaptativo."""
+    cursor = db.cursor()
+    cursor.execute("SELECT (SELECT COUNT(*) FROM historial_bolillero) + (SELECT COUNT(*) FROM tickets_venta) + (SELECT id FROM partidas ORDER BY id DESC LIMIT 1);")
+    version = cursor.fetchone()[0] or 0
+    return {"version": version}
 
 @app.get("/api/game/state")
 def get_game_state(current_user: Dict[str, Any] = Depends(get_current_user), db: sqlite3.Connection = Depends(get_db)):

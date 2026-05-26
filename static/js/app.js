@@ -60,7 +60,8 @@ let state = {
     daubedCells: {}, // Registro manual de celdas marcadas por el usuario { ticketId_posicion_r_c: true }
     pollerInterval: null,
     adminPollerInterval: null,
-    announcedWinners: new Set() // Registro de ganadores mostrados para evitar popups duplicados
+    announcedWinners: new Set(), // Registro de ganadores mostrados para evitar popups duplicados
+    currentGameVersion: -1 // Versión de la partida para adaptive polling
 };
 
 // Coordenadas del patrón libre
@@ -600,6 +601,14 @@ async function fetchGameState() {
     if (!state.user) return;
     
     try {
+        // Optimización: Adaptive Polling
+        const verRes = await fetch(`${API_BASE}/api/game/version`);
+        const verData = await verRes.json();
+        if (verData.version === state.currentGameVersion) {
+            return; // No descargar el estado completo si no hay cambios en la base de datos
+        }
+        state.currentGameVersion = verData.version;
+
         const res = await fetch(`${API_BASE}/api/game/state`, {
             headers: { 'Authorization': `Bearer ${state.user.token}` }
         });
