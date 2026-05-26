@@ -919,7 +919,7 @@ let ambientAudio = null;
 
 function startAmbientMusic() {
     if (!ambientAudio) {
-        ambientAudio = new Audio(`${API_BASE}/static/assets/audio/casino_bg.mp3`);
+        ambientAudio = new Audio(`${API_BASE}/assets/audio/casino_bg.mp3`);
         ambientAudio.loop = true;
         ambientAudio.volume = 0.2; // Volumen bajo acogedor
     }
