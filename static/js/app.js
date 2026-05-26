@@ -915,42 +915,40 @@ function initAudio() {
     } catch(e) { console.warn("Audio init failed"); }
 }
 
+let ambientInterval = null;
+
 function startAmbientMusic() {
     initAudio();
-    if (!globalAudioCtx || ambientOsc1) return;
+    if (!globalAudioCtx || ambientInterval) return;
     
-    ambientGain = globalAudioCtx.createGain();
-    ambientGain.gain.value = 0.03; // Very low background volume
-    ambientGain.connect(globalAudioCtx.destination);
+    // Rhythmic, welcoming arpeggio (C major pentatonic)
+    const notes = [261.63, 329.63, 392.00, 523.25]; 
+    let noteIdx = 0;
     
-    ambientOsc1 = globalAudioCtx.createOscillator();
-    ambientOsc1.type = 'sine';
-    ambientOsc1.frequency.value = 110; // A2
-    ambientOsc1.connect(ambientGain);
-    
-    ambientOsc2 = globalAudioCtx.createOscillator();
-    ambientOsc2.type = 'triangle';
-    ambientOsc2.frequency.value = 164.81; // E3
-    ambientOsc2.connect(ambientGain);
-    
-    ambientOsc1.start();
-    ambientOsc2.start();
+    ambientInterval = setInterval(() => {
+        if(globalAudioCtx.state !== 'running') return;
+        const osc = globalAudioCtx.createOscillator();
+        const gain = globalAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = notes[noteIdx];
+        
+        gain.gain.setValueAtTime(0, globalAudioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.06, globalAudioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + 0.4);
+        
+        osc.connect(gain);
+        gain.connect(globalAudioCtx.destination);
+        osc.start(globalAudioCtx.currentTime);
+        osc.stop(globalAudioCtx.currentTime + 0.4);
+        
+        noteIdx = (noteIdx + 1) % notes.length;
+    }, 250); // 120 BPM 8th notes
 }
 
 function stopAmbientMusic() {
-    if (ambientOsc1) {
-        ambientOsc1.stop();
-        ambientOsc1.disconnect();
-        ambientOsc1 = null;
-    }
-    if (ambientOsc2) {
-        ambientOsc2.stop();
-        ambientOsc2.disconnect();
-        ambientOsc2 = null;
-    }
-    if (ambientGain) {
-        ambientGain.disconnect();
-        ambientGain = null;
+    if (ambientInterval) {
+        clearInterval(ambientInterval);
+        ambientInterval = null;
     }
 }
 
@@ -961,25 +959,34 @@ function playWinSound() {
     const ctx = globalAudioCtx;
     const now = ctx.currentTime;
     
-    // Arpegio triunfal (A mayor)
-    const freqs = [440, 554.37, 659.25, 880, 1108.73];
+    // Triunfal Fanfare (Super Mario style)
+    const freqs = [
+        {f: 523.25, t: 0, d: 0.15},   // C5
+        {f: 659.25, t: 0.15, d: 0.15},// E5
+        {f: 783.99, t: 0.30, d: 0.15},// G5
+        {f: 1046.50, t: 0.45, d: 0.5} // C6 (long)
+    ];
     
-    freqs.forEach((freq, i) => {
+    freqs.forEach(note => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         
-        osc.type = 'sine';
-        osc.frequency.value = freq;
+        osc.type = 'square'; // chiptune style
+        osc.frequency.value = note.f;
         
-        gain.gain.setValueAtTime(0, now + i * 0.1);
-        gain.gain.linearRampToValueAtTime(0.2, now + i * 0.1 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.6);
+        gain.gain.setValueAtTime(0, now + note.t);
+        gain.gain.linearRampToValueAtTime(0.12, now + note.t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + note.t + note.d);
+        
+        if(note.d > 0.2) {
+             osc.frequency.exponentialRampToValueAtTime(note.f * 1.05, now + note.t + note.d);
+        }
         
         osc.connect(gain);
         gain.connect(ctx.destination);
         
-        osc.start(now + i * 0.1);
-        osc.stop(now + i * 0.1 + 0.6);
+        osc.start(now + note.t);
+        osc.stop(now + note.t + note.d);
     });
 }
 
